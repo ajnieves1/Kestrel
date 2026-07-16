@@ -62,7 +62,8 @@ jobs:
         run: |
           source /opt/ros/jazzy/setup.bash
           colcon build --event-handlers console_cohesion+
-          colcon test
+          # A package with no tests yet makes pytest exit 5, gate on the results
+          colcon test || true
           colcon test-result --verbose
 
   lint:
