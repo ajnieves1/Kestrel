@@ -28,6 +28,7 @@ setup(
     entry_points={
         'console_scripts': [
             'telemetry_monitor = kestrel.telemetry_monitor:main',
+            'flight_commander = kestrel.flight_commander:main',
         ],
     },
 )
