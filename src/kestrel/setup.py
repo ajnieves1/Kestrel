@@ -29,6 +29,7 @@ setup(
         'console_scripts': [
             'telemetry_monitor = kestrel.telemetry_monitor:main',
             'flight_commander = kestrel.flight_commander:main',
+            'safety_guard = kestrel.safety_guard:main',
         ],
     },
 )
