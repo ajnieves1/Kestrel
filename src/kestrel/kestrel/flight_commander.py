@@ -10,7 +10,8 @@ from mavros_msgs.srv import CommandBool, CommandTOL, SetMode
 from rclpy.callback_groups import ReentrantCallbackGroup
 from rclpy.executors import MultiThreadedExecutor
 from rclpy.node import Node
-from rclpy.qos import qos_profile_sensor_data
+from rclpy.qos import (QoSDurabilityPolicy, QoSHistoryPolicy, QoSProfile,
+                       QoSReliabilityPolicy, qos_profile_sensor_data)
 from std_srvs.srv import Trigger
 
 
@@ -33,9 +34,15 @@ class FlightCommander(Node):
         self.create_subscription(
             PoseStamped, '/mavros/local_position/pose', self.on_pose,
             qos_profile_sensor_data, callback_group=self.callback_group)
+        # Home position is latched transient local, match it or a late start misses it
+        latched_qos = QoSProfile(
+            depth=1,
+            reliability=QoSReliabilityPolicy.RELIABLE,
+            durability=QoSDurabilityPolicy.TRANSIENT_LOCAL,
+            history=QoSHistoryPolicy.KEEP_LAST)
         self.create_subscription(
             HomePosition, '/mavros/home_position/home', self.on_home,
-            qos_profile_sensor_data, callback_group=self.callback_group)
+            latched_qos, callback_group=self.callback_group)
 
         self.set_mode_client = self.create_client(
             SetMode, '/mavros/set_mode', callback_group=self.callback_group)

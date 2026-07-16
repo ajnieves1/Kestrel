@@ -1,0 +1,450 @@
+<?xml version="1.0" ?>
+<sdf version="1.9">
+  <!-- Gazebo world xy is east north (ENU), z is up -->
+  <world name="pylon_world">
+    <physics name="1ms" type="ignore">
+      <max_step_size>0.001</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+    </physics>
+
+    <plugin filename="gz-sim-physics-system"
+      name="gz::sim::systems::Physics">
+    </plugin>
+    <plugin filename="gz-sim-sensors-system"
+      name="gz::sim::systems::Sensors">
+      <render_engine>ogre2</render_engine>
+    </plugin>
+    <plugin filename="gz-sim-user-commands-system"
+      name="gz::sim::systems::UserCommands">
+    </plugin>
+    <plugin filename="gz-sim-scene-broadcaster-system"
+      name="gz::sim::systems::SceneBroadcaster">
+    </plugin>
+    <plugin filename="gz-sim-imu-system"
+      name="gz::sim::systems::Imu">
+    </plugin>
+    <plugin filename="gz-sim-navsat-system"
+      name="gz::sim::systems::NavSat">
+    </plugin>
+
+    <scene>
+      <ambient>1.0 1.0 1.0</ambient>
+      <background>0.8 0.8 0.9</background>
+      <sky></sky>
+    </scene>
+
+    <spherical_coordinates>
+      <latitude_deg>-35.363262</latitude_deg>
+      <longitude_deg>149.165237</longitude_deg>
+      <elevation>584</elevation>
+      <heading_deg>0</heading_deg>
+      <surface_model>EARTH_WGS84</surface_model>
+    </spherical_coordinates>
+
+    <light type="directional" name="sun">
+      <cast_shadows>true</cast_shadows>
+      <pose>0 0 10 0 0 0</pose>
+      <diffuse>0.8 0.8 0.8 1</diffuse>
+      <specular>0.8 0.8 0.8 1</specular>
+      <attenuation>
+        <range>1000</range>
+        <constant>0.9</constant>
+        <linear>0.01</linear>
+        <quadratic>0.001</quadratic>
+      </attenuation>
+      <direction>-0.5 0.1 -0.9</direction>
+    </light>
+
+    <model name="ground_plane">
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>200 200</size>
+            </plane>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>200 200</size>
+            </plane>
+          </geometry>
+          <material>
+            <ambient>0.3 0.4 0.3 1</ambient>
+            <diffuse>0.3 0.4 0.3 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Pylon center is north 15, Gazebo xy is east north, so Gazebo pose 0 15 -->
+    <model name="pylon">
+      <static>true</static>
+      <pose>0 15 0 0 0 0</pose>
+      <link name="frame">
+      <collision name="leg_ne_col">
+        <pose>1.5 1.5 12.5 0 0 0</pose>
+        <geometry>
+          <box><size>0.3 0.3 25</size></box>
+        </geometry>
+      </collision>
+      <visual name="leg_ne_vis">
+        <pose>1.5 1.5 12.5 0 0 0</pose>
+        <geometry>
+          <box><size>0.3 0.3 25</size></box>
+        </geometry>
+        <material>
+          <ambient>0.4 0.4 0.45 1</ambient>
+          <diffuse>0.4 0.4 0.45 1</diffuse>
+        </material>
+      </visual>
+      <collision name="leg_nw_col">
+        <pose>-1.5 1.5 12.5 0 0 0</pose>
+        <geometry>
+          <box><size>0.3 0.3 25</size></box>
+        </geometry>
+      </collision>
+      <visual name="leg_nw_vis">
+        <pose>-1.5 1.5 12.5 0 0 0</pose>
+        <geometry>
+          <box><size>0.3 0.3 25</size></box>
+        </geometry>
+        <material>
+          <ambient>0.4 0.4 0.45 1</ambient>
+          <diffuse>0.4 0.4 0.45 1</diffuse>
+        </material>
+      </visual>
+      <collision name="leg_se_col">
+        <pose>1.5 -1.5 12.5 0 0 0</pose>
+        <geometry>
+          <box><size>0.3 0.3 25</size></box>
+        </geometry>
+      </collision>
+      <visual name="leg_se_vis">
+        <pose>1.5 -1.5 12.5 0 0 0</pose>
+        <geometry>
+          <box><size>0.3 0.3 25</size></box>
+        </geometry>
+        <material>
+          <ambient>0.4 0.4 0.45 1</ambient>
+          <diffuse>0.4 0.4 0.45 1</diffuse>
+        </material>
+      </visual>
+      <collision name="leg_sw_col">
+        <pose>-1.5 -1.5 12.5 0 0 0</pose>
+        <geometry>
+          <box><size>0.3 0.3 25</size></box>
+        </geometry>
+      </collision>
+      <visual name="leg_sw_vis">
+        <pose>-1.5 -1.5 12.5 0 0 0</pose>
+        <geometry>
+          <box><size>0.3 0.3 25</size></box>
+        </geometry>
+        <material>
+          <ambient>0.4 0.4 0.45 1</ambient>
+          <diffuse>0.4 0.4 0.45 1</diffuse>
+        </material>
+      </visual>
+      <collision name="brace_yp_5_col">
+        <pose>0 1.5 5 0 0 0</pose>
+        <geometry>
+          <box><size>3.0 0.2 0.2</size></box>
+        </geometry>
+      </collision>
+      <visual name="brace_yp_5_vis">
+        <pose>0 1.5 5 0 0 0</pose>
+        <geometry>
+          <box><size>3.0 0.2 0.2</size></box>
+        </geometry>
+        <material>
+          <ambient>0.4 0.4 0.45 1</ambient>
+          <diffuse>0.4 0.4 0.45 1</diffuse>
+        </material>
+      </visual>
+      <collision name="brace_yn_5_col">
+        <pose>0 -1.5 5 0 0 0</pose>
+        <geometry>
+          <box><size>3.0 0.2 0.2</size></box>
+        </geometry>
+      </collision>
+      <visual name="brace_yn_5_vis">
+        <pose>0 -1.5 5 0 0 0</pose>
+        <geometry>
+          <box><size>3.0 0.2 0.2</size></box>
+        </geometry>
+        <material>
+          <ambient>0.4 0.4 0.45 1</ambient>
+          <diffuse>0.4 0.4 0.45 1</diffuse>
+        </material>
+      </visual>
+      <collision name="brace_xp_5_col">
+        <pose>1.5 0 5 0 0 0</pose>
+        <geometry>
+          <box><size>0.2 3.0 0.2</size></box>
+        </geometry>
+      </collision>
+      <visual name="brace_xp_5_vis">
+        <pose>1.5 0 5 0 0 0</pose>
+        <geometry>
+          <box><size>0.2 3.0 0.2</size></box>
+        </geometry>
+        <material>
+          <ambient>0.4 0.4 0.45 1</ambient>
+          <diffuse>0.4 0.4 0.45 1</diffuse>
+        </material>
+      </visual>
+      <collision name="brace_xn_5_col">
+        <pose>-1.5 0 5 0 0 0</pose>
+        <geometry>
+          <box><size>0.2 3.0 0.2</size></box>
+        </geometry>
+      </collision>
+      <visual name="brace_xn_5_vis">
+        <pose>-1.5 0 5 0 0 0</pose>
+        <geometry>
+          <box><size>0.2 3.0 0.2</size></box>
+        </geometry>
+        <material>
+          <ambient>0.4 0.4 0.45 1</ambient>
+          <diffuse>0.4 0.4 0.45 1</diffuse>
+        </material>
+      </visual>
+      <collision name="brace_yp_10_col">
+        <pose>0 1.5 10 0 0 0</pose>
+        <geometry>
+          <box><size>3.0 0.2 0.2</size></box>
+        </geometry>
+      </collision>
+      <visual name="brace_yp_10_vis">
+        <pose>0 1.5 10 0 0 0</pose>
+        <geometry>
+          <box><size>3.0 0.2 0.2</size></box>
+        </geometry>
+        <material>
+          <ambient>0.4 0.4 0.45 1</ambient>
+          <diffuse>0.4 0.4 0.45 1</diffuse>
+        </material>
+      </visual>
+      <collision name="brace_yn_10_col">
+        <pose>0 -1.5 10 0 0 0</pose>
+        <geometry>
+          <box><size>3.0 0.2 0.2</size></box>
+        </geometry>
+      </collision>
+      <visual name="brace_yn_10_vis">
+        <pose>0 -1.5 10 0 0 0</pose>
+        <geometry>
+          <box><size>3.0 0.2 0.2</size></box>
+        </geometry>
+        <material>
+          <ambient>0.4 0.4 0.45 1</ambient>
+          <diffuse>0.4 0.4 0.45 1</diffuse>
+        </material>
+      </visual>
+      <collision name="brace_xp_10_col">
+        <pose>1.5 0 10 0 0 0</pose>
+        <geometry>
+          <box><size>0.2 3.0 0.2</size></box>
+        </geometry>
+      </collision>
+      <visual name="brace_xp_10_vis">
+        <pose>1.5 0 10 0 0 0</pose>
+        <geometry>
+          <box><size>0.2 3.0 0.2</size></box>
+        </geometry>
+        <material>
+          <ambient>0.4 0.4 0.45 1</ambient>
+          <diffuse>0.4 0.4 0.45 1</diffuse>
+        </material>
+      </visual>
+      <collision name="brace_xn_10_col">
+        <pose>-1.5 0 10 0 0 0</pose>
+        <geometry>
+          <box><size>0.2 3.0 0.2</size></box>
+        </geometry>
+      </collision>
+      <visual name="brace_xn_10_vis">
+        <pose>-1.5 0 10 0 0 0</pose>
+        <geometry>
+          <box><size>0.2 3.0 0.2</size></box>
+        </geometry>
+        <material>
+          <ambient>0.4 0.4 0.45 1</ambient>
+          <diffuse>0.4 0.4 0.45 1</diffuse>
+        </material>
+      </visual>
+      <collision name="brace_yp_15_col">
+        <pose>0 1.5 15 0 0 0</pose>
+        <geometry>
+          <box><size>3.0 0.2 0.2</size></box>
+        </geometry>
+      </collision>
+      <visual name="brace_yp_15_vis">
+        <pose>0 1.5 15 0 0 0</pose>
+        <geometry>
+          <box><size>3.0 0.2 0.2</size></box>
+        </geometry>
+        <material>
+          <ambient>0.4 0.4 0.45 1</ambient>
+          <diffuse>0.4 0.4 0.45 1</diffuse>
+        </material>
+      </visual>
+      <collision name="brace_yn_15_col">
+        <pose>0 -1.5 15 0 0 0</pose>
+        <geometry>
+          <box><size>3.0 0.2 0.2</size></box>
+        </geometry>
+      </collision>
+      <visual name="brace_yn_15_vis">
+        <pose>0 -1.5 15 0 0 0</pose>
+        <geometry>
+          <box><size>3.0 0.2 0.2</size></box>
+        </geometry>
+        <material>
+          <ambient>0.4 0.4 0.45 1</ambient>
+          <diffuse>0.4 0.4 0.45 1</diffuse>
+        </material>
+      </visual>
+      <collision name="brace_xp_15_col">
+        <pose>1.5 0 15 0 0 0</pose>
+        <geometry>
+          <box><size>0.2 3.0 0.2</size></box>
+        </geometry>
+      </collision>
+      <visual name="brace_xp_15_vis">
+        <pose>1.5 0 15 0 0 0</pose>
+        <geometry>
+          <box><size>0.2 3.0 0.2</size></box>
+        </geometry>
+        <material>
+          <ambient>0.4 0.4 0.45 1</ambient>
+          <diffuse>0.4 0.4 0.45 1</diffuse>
+        </material>
+      </visual>
+      <collision name="brace_xn_15_col">
+        <pose>-1.5 0 15 0 0 0</pose>
+        <geometry>
+          <box><size>0.2 3.0 0.2</size></box>
+        </geometry>
+      </collision>
+      <visual name="brace_xn_15_vis">
+        <pose>-1.5 0 15 0 0 0</pose>
+        <geometry>
+          <box><size>0.2 3.0 0.2</size></box>
+        </geometry>
+        <material>
+          <ambient>0.4 0.4 0.45 1</ambient>
+          <diffuse>0.4 0.4 0.45 1</diffuse>
+        </material>
+      </visual>
+      <collision name="brace_yp_20_col">
+        <pose>0 1.5 20 0 0 0</pose>
+        <geometry>
+          <box><size>3.0 0.2 0.2</size></box>
+        </geometry>
+      </collision>
+      <visual name="brace_yp_20_vis">
+        <pose>0 1.5 20 0 0 0</pose>
+        <geometry>
+          <box><size>3.0 0.2 0.2</size></box>
+        </geometry>
+        <material>
+          <ambient>0.4 0.4 0.45 1</ambient>
+          <diffuse>0.4 0.4 0.45 1</diffuse>
+        </material>
+      </visual>
+      <collision name="brace_yn_20_col">
+        <pose>0 -1.5 20 0 0 0</pose>
+        <geometry>
+          <box><size>3.0 0.2 0.2</size></box>
+        </geometry>
+      </collision>
+      <visual name="brace_yn_20_vis">
+        <pose>0 -1.5 20 0 0 0</pose>
+        <geometry>
+          <box><size>3.0 0.2 0.2</size></box>
+        </geometry>
+        <material>
+          <ambient>0.4 0.4 0.45 1</ambient>
+          <diffuse>0.4 0.4 0.45 1</diffuse>
+        </material>
+      </visual>
+      <collision name="brace_xp_20_col">
+        <pose>1.5 0 20 0 0 0</pose>
+        <geometry>
+          <box><size>0.2 3.0 0.2</size></box>
+        </geometry>
+      </collision>
+      <visual name="brace_xp_20_vis">
+        <pose>1.5 0 20 0 0 0</pose>
+        <geometry>
+          <box><size>0.2 3.0 0.2</size></box>
+        </geometry>
+        <material>
+          <ambient>0.4 0.4 0.45 1</ambient>
+          <diffuse>0.4 0.4 0.45 1</diffuse>
+        </material>
+      </visual>
+      <collision name="brace_xn_20_col">
+        <pose>-1.5 0 20 0 0 0</pose>
+        <geometry>
+          <box><size>0.2 3.0 0.2</size></box>
+        </geometry>
+      </collision>
+      <visual name="brace_xn_20_vis">
+        <pose>-1.5 0 20 0 0 0</pose>
+        <geometry>
+          <box><size>0.2 3.0 0.2</size></box>
+        </geometry>
+        <material>
+          <ambient>0.4 0.4 0.45 1</ambient>
+          <diffuse>0.4 0.4 0.45 1</diffuse>
+        </material>
+      </visual>
+      <collision name="arm_18_col">
+        <pose>0 0 18 0 0 0</pose>
+        <geometry>
+          <box><size>8.0 0.4 0.4</size></box>
+        </geometry>
+      </collision>
+      <visual name="arm_18_vis">
+        <pose>0 0 18 0 0 0</pose>
+        <geometry>
+          <box><size>8.0 0.4 0.4</size></box>
+        </geometry>
+        <material>
+          <ambient>0.4 0.4 0.45 1</ambient>
+          <diffuse>0.4 0.4 0.45 1</diffuse>
+        </material>
+      </visual>
+      <collision name="arm_22_col">
+        <pose>0 0 22 0 0 0</pose>
+        <geometry>
+          <box><size>8.0 0.4 0.4</size></box>
+        </geometry>
+      </collision>
+      <visual name="arm_22_vis">
+        <pose>0 0 22 0 0 0</pose>
+        <geometry>
+          <box><size>8.0 0.4 0.4</size></box>
+        </geometry>
+        <material>
+          <ambient>0.4 0.4 0.45 1</ambient>
+          <diffuse>0.4 0.4 0.45 1</diffuse>
+        </material>
+      </visual>
+      </link>
+    </model>
+
+    <include>
+      <uri>model://kestrel_iris</uri>
+      <pose>0 0 0 0 0 0</pose>
+    </include>
+
+  </world>
+</sdf>
