@@ -9,9 +9,15 @@ permissions:
 jobs:
   image:
     runs-on: ubuntu-latest
+    outputs:
+      image_repo: ${{ steps.repo.outputs.repo }}
     steps:
       - name: Check out the repository
         uses: actions/checkout@v4
+
+      - name: Compute the lowercase image repository name
+        id: repo
+        run: echo "repo=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
 
       - name: Free disk space for the large ROS and Gazebo image
         run: sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/lib/android
@@ -32,15 +38,15 @@ jobs:
           context: .
           file: docker/Dockerfile
           push: true
-          tags: ghcr.io/${{ github.repository }}/kestrel-dev:${{ github.sha }}
-          cache-from: type=registry,ref=ghcr.io/${{ github.repository }}/kestrel-dev:buildcache
-          cache-to: type=registry,ref=ghcr.io/${{ github.repository }}/kestrel-dev:buildcache,mode=max
+          tags: ghcr.io/${{ steps.repo.outputs.repo }}/kestrel-dev:${{ github.sha }}
+          cache-from: type=registry,ref=ghcr.io/${{ steps.repo.outputs.repo }}/kestrel-dev:buildcache
+          cache-to: type=registry,ref=ghcr.io/${{ steps.repo.outputs.repo }}/kestrel-dev:buildcache,mode=max
 
   build:
     needs: image
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/${{ github.repository }}/kestrel-dev:${{ github.sha }}
+      image: ghcr.io/${{ needs.image.outputs.image_repo }}/kestrel-dev:${{ github.sha }}
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
