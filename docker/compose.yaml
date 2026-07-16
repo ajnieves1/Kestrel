@@ -1,0 +1,43 @@
+services:
+  # GUI capable dev shell, needs xhost +local: on the host once per boot
+  dev:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    image: kestrel-dev
+    network_mode: host
+    ipc: host
+    security_opt:
+      - label=disable
+    environment:
+      - DISPLAY=${DISPLAY}
+      - QT_X11_NO_MITSHM=1
+    volumes:
+      - ..:/ws/src/kestrel
+      - /tmp/.X11-unix:/tmp/.X11-unix
+      - kestrel_build:/ws/build
+      - kestrel_install:/ws/install
+      - kestrel_log:/ws/log
+    working_dir: /ws
+    command: bash
+
+  # Same container without any display wiring, for CI and background runs
+  headless:
+    profiles: ["headless"]
+    image: kestrel-dev
+    network_mode: host
+    ipc: host
+    security_opt:
+      - label=disable
+    volumes:
+      - ..:/ws/src/kestrel
+      - kestrel_build:/ws/build
+      - kestrel_install:/ws/install
+      - kestrel_log:/ws/log
+    working_dir: /ws
+    command: bash
+
+volumes:
+  kestrel_build:
+  kestrel_install:
+  kestrel_log:
