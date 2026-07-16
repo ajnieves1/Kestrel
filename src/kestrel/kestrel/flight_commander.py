@@ -1,15 +1,17 @@
 # Offer takeoff, goto, and land services that wrap MAVROS control of ArduCopter
+import math
 import time
 
 import rclpy
 from geometry_msgs.msg import PoseStamped
-from kestrel_msgs.srv import Takeoff
+from kestrel_msgs.srv import GotoLocal, Takeoff
 from mavros_msgs.msg import HomePosition, State
 from mavros_msgs.srv import CommandBool, CommandTOL, SetMode
 from rclpy.callback_groups import ReentrantCallbackGroup
 from rclpy.executors import MultiThreadedExecutor
 from rclpy.node import Node
 from rclpy.qos import qos_profile_sensor_data
+from std_srvs.srv import Trigger
 
 
 # Offer takeoff, goto, and land services that wrap MAVROS control of ArduCopter
@@ -41,9 +43,20 @@ class FlightCommander(Node):
             CommandBool, '/mavros/cmd/arming', callback_group=self.callback_group)
         self.takeoff_client = self.create_client(
             CommandTOL, '/mavros/cmd/takeoff', callback_group=self.callback_group)
+        self.land_client = self.create_client(
+            CommandTOL, '/mavros/cmd/land', callback_group=self.callback_group)
+
+        self.setpoint_publisher = self.create_publisher(
+            PoseStamped, '/mavros/setpoint_position/local', 10)
 
         self.create_service(
             Takeoff, '/kestrel/cmd/takeoff', self.handle_takeoff,
+            callback_group=self.callback_group)
+        self.create_service(
+            GotoLocal, '/kestrel/cmd/goto', self.handle_goto,
+            callback_group=self.callback_group)
+        self.create_service(
+            Trigger, '/kestrel/cmd/land', self.handle_land,
             callback_group=self.callback_group)
 
     # Store the latest vehicle state message
@@ -147,6 +160,85 @@ class FlightCommander(Node):
         response.success = True
         response.message = 'reached target altitude'
         return response
+
+    # Handle /kestrel/cmd/goto by streaming setpoints until arrival or timeout
+    def handle_goto(self, request, response):
+        # Refuse unless armed and in GUIDED, setpoints are ignored otherwise
+        if (self.state_message is None or not self.state_message.armed
+                or self.state_message.mode != 'GUIDED'):
+            response.success = False
+            response.message = 'vehicle is not armed and in GUIDED'
+            return response
+
+        target = self.build_enu_setpoint(
+            request.north, request.east, request.altitude, request.yaw_deg)
+
+        # Stream the setpoint at 10 Hz until the pose is within half a meter
+        arrived = False
+        remaining = float('inf')
+        deadline = time.time() + 60.0
+        while time.time() < deadline:
+            target.header.stamp = self.get_clock().now().to_msg()
+            self.setpoint_publisher.publish(target)
+            if self.pose_message is not None:
+                current = self.pose_message.pose.position
+                remaining = math.sqrt(
+                    (current.x - target.pose.position.x) ** 2
+                    + (current.y - target.pose.position.y) ** 2
+                    + (current.z - target.pose.position.z) ** 2)
+                if remaining < 0.5:
+                    arrived = True
+                    break
+            time.sleep(0.1)
+
+        if not arrived:
+            response.success = False
+            response.message = f'timed out {remaining:.2f} m from the target'
+            return response
+
+        response.success = True
+        response.message = 'reached the target'
+        return response
+
+    # Handle /kestrel/cmd/land by calling MAVROS land and waiting for disarm
+    def handle_land(self, request, response):
+        land_result = self.call_service_blocking(
+            self.land_client, CommandTOL.Request(), 5.0)
+        if land_result is None or not land_result.success:
+            response.success = False
+            response.message = 'land command was rejected'
+            return response
+
+        # Landing finishes when ArduPilot disarms the motors on touchdown
+        disarmed = False
+        deadline = time.time() + 60.0
+        while time.time() < deadline:
+            if self.state_message is not None and not self.state_message.armed:
+                disarmed = True
+                break
+            time.sleep(0.1)
+        if not disarmed:
+            response.success = False
+            response.message = 'timed out waiting for disarm after land'
+            return response
+
+        response.success = True
+        response.message = 'landed and disarmed'
+        return response
+
+    # MAVROS local frame is ENU while our services speak north and east, convert here
+    def build_enu_setpoint(self, north, east, altitude, yaw_deg):
+        setpoint = PoseStamped()
+        setpoint.pose.position.x = float(east)
+        setpoint.pose.position.y = float(north)
+        setpoint.pose.position.z = float(altitude)
+        # Compass yaw is from north clockwise, ENU yaw is from east toward north
+        yaw = math.radians(90.0 - yaw_deg)
+        setpoint.pose.orientation.x = 0.0
+        setpoint.pose.orientation.y = 0.0
+        setpoint.pose.orientation.z = math.sin(yaw / 2.0)
+        setpoint.pose.orientation.w = math.cos(yaw / 2.0)
+        return setpoint
 
     # Call a MAVROS service and wait for the reply with a deadline
     def call_service_blocking(self, client, request, timeout_seconds):
