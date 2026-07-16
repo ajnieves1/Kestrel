@@ -50,6 +50,9 @@ jobs:
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
+      # The image runs as ubuntu by default, checkout needs root to write
+      # its state files into the runner temp directory
+      options: --user root
     steps:
       - name: Check out the repository
         uses: actions/checkout@v4
