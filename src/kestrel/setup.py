@@ -26,6 +26,8 @@ setup(
     description='Autonomous inspection drone nodes',
     license='MIT',
     entry_points={
-        'console_scripts': [],
+        'console_scripts': [
+            'telemetry_monitor = kestrel.telemetry_monitor:main',
+        ],
     },
 )
