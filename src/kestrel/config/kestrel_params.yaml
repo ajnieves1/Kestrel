@@ -1,0 +1,4 @@
+# The wrapper node named mavros_node reads the fcu url and builds the router
+mavros_node:
+  ros__parameters:
+    fcu_url: udp://:14550@
