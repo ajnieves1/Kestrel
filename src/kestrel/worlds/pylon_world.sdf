@@ -441,6 +441,12 @@
       </link>
     </model>
 
+    <!-- Same pose as the pylon, marker link poses are local offsets from it -->
+    <include>
+      <uri>model://defect_marker</uri>
+      <pose>0 15 0 0 0 0</pose>
+    </include>
+
     <include>
       <uri>model://kestrel_iris</uri>
       <pose>0 0 0 0 0 0</pose>

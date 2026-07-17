@@ -22,6 +22,9 @@ setup(
          glob('worlds/*.sdf')),
         (os.path.join('share', package_name, 'models', 'kestrel_iris'),
          glob('models/kestrel_iris/*')),
+        (os.path.join('share', package_name, 'models', 'defect_marker'),
+         glob('models/defect_marker/*.sdf') + glob('models/defect_marker/*.config')
+         + glob('models/defect_marker/*.png')),
     ],
     install_requires=['setuptools'],
     zip_safe=True,
