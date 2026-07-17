@@ -14,6 +14,7 @@ def generate_launch_description():
     package_share = get_package_share_directory('kestrel')
     params_file = os.path.join(package_share, 'config', 'kestrel_params.yaml')
     world_file = os.path.join(package_share, 'worlds', 'pylon_world.sdf')
+    run_sitl_script = os.path.join(package_share, 'scripts', 'run_sitl.sh')
 
     headless = LaunchConfiguration('headless')
     headless_argument = DeclareLaunchArgument(
@@ -32,7 +33,7 @@ def generate_launch_description():
 
     # SITL drives the Gazebo iris frame over the JSON FDM interface
     sitl_process = ExecuteProcess(
-        cmd=['bash', '/ws/src/kestrel/scripts/run_sitl.sh',
+        cmd=['bash', run_sitl_script,
              '-f', 'gazebo-iris', '--model', 'JSON',
              '--mavproxy-args=--daemon'],
         output='screen')

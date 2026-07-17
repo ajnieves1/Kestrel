@@ -20,6 +20,8 @@ setup(
          glob('config/*.yaml')),
         (os.path.join('share', package_name, 'worlds'),
          glob('worlds/*.sdf')),
+        (os.path.join('share', package_name, 'scripts'),
+         glob('../../scripts/*.sh')),
         (os.path.join('share', package_name, 'models', 'kestrel_iris'),
          glob('models/kestrel_iris/*')),
         (os.path.join('share', package_name, 'models', 'defect_marker'),
