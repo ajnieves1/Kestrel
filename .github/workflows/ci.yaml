@@ -66,6 +66,27 @@ jobs:
           colcon test || true
           colcon test-result --verbose
 
+  smoke:
+    needs: image
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/${{ needs.image.outputs.image_repo }}/kestrel-dev:${{ github.sha }}
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+      options: --user root
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Build and run the SITL smoke test
+        shell: bash
+        run: |
+          source /opt/ros/jazzy/setup.bash
+          colcon build --event-handlers console_cohesion+
+          source install/setup.bash
+          KESTREL_RUN_SITL_SMOKE=1 pytest src/kestrel/test/test_smoke_sitl.py -v
+
   lint:
     runs-on: ubuntu-latest
     steps:

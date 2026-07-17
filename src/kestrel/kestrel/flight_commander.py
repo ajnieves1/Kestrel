@@ -14,6 +14,11 @@ from rclpy.qos import (QoSDurabilityPolicy, QoSHistoryPolicy, QoSProfile,
                        QoSReliabilityPolicy, qos_profile_sensor_data)
 from std_srvs.srv import Trigger
 
+# Total time to keep retrying the arm command while ArduCopter's EKF settles
+ARM_READY_DEADLINE_SECONDS = 120.0
+# Pause between arm attempts, matches design.md A14's original spacing
+ARM_RETRY_PAUSE_SECONDS = 3.0
+
 
 # Offer takeoff, goto, and land services that wrap MAVROS control of ArduCopter
 class FlightCommander(Node):
@@ -124,19 +129,22 @@ class FlightCommander(Node):
             response.message = 'failed to enter GUIDED mode'
             return response
 
-        # Step 4: arm, ArduPilot rejects until its prearm checks pass
+        # Step 4: arm, ArduPilot rejects until its prearm checks pass.
+        # A14 originally spaced 5 attempts 3 s apart, but real flights showed
+        # the EKF position estimate can take much longer than that to settle
         armed = False
-        for attempt in range(5):
+        arm_deadline = time.time() + ARM_READY_DEADLINE_SECONDS
+        while time.time() < arm_deadline:
             arm_request = CommandBool.Request()
             arm_request.value = True
             arm_result = self.call_service_blocking(self.arming_client, arm_request, 5.0)
             if arm_result is not None and arm_result.success:
                 armed = True
                 break
-            time.sleep(3.0)
+            time.sleep(ARM_RETRY_PAUSE_SECONDS)
         if not armed:
             response.success = False
-            response.message = 'failed to arm after 5 attempts'
+            response.message = 'failed to arm within the retry window'
             return response
 
         # Step 5: command the takeoff to the target altitude
