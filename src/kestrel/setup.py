@@ -39,6 +39,7 @@ setup(
             'flight_commander = kestrel.flight_commander:main',
             'safety_guard = kestrel.safety_guard:main',
             'defect_detector = kestrel.defect_detector:main',
+            'mission_director = kestrel.mission_director:main',
         ],
     },
 )
