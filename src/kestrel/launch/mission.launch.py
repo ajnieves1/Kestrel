@@ -38,9 +38,11 @@ def generate_launch_description():
     mission_director_node = Node(
         package='kestrel', executable='mission_director',
         parameters=[params_file], output='screen')
-    # report_writer joins here in task 14
+    report_writer_node = Node(
+        package='kestrel', executable='report_writer',
+        parameters=[params_file], output='screen')
 
     return LaunchDescription([
         headless_argument, sim_launch, telemetry_monitor_node,
         flight_commander_node, safety_guard_node, defect_detector_node,
-        mission_director_node])
+        mission_director_node, report_writer_node])

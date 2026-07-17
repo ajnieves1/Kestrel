@@ -34,3 +34,8 @@ mission_director:
     investigate_waypoint_count: 8
     return_altitude: 5.0
     auto_start: true
+
+report_writer:
+  ros__parameters:
+    llm_provider: claude
+    llm_model: ""

@@ -40,6 +40,7 @@ setup(
             'safety_guard = kestrel.safety_guard:main',
             'defect_detector = kestrel.defect_detector:main',
             'mission_director = kestrel.mission_director:main',
+            'report_writer = kestrel.report_writer:main',
         ],
     },
 )
