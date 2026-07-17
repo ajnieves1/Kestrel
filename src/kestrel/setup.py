@@ -43,6 +43,7 @@ setup(
             'defect_detector = kestrel.defect_detector:main',
             'mission_director = kestrel.mission_director:main',
             'report_writer = kestrel.report_writer:main',
+            'mcp_server = kestrel.mcp_server:main',
         ],
     },
 )

@@ -61,7 +61,8 @@ RUN git clone https://github.com/ArduPilot/ardupilot_gazebo.git && \
     cmake --build build -j4
 
 # Vision inference, LLM report writer SDKs, and MAVLink tooling
-RUN sudo pip3 install --break-system-packages onnxruntime anthropic openai google-genai pymavlink MAVProxy future pytest-timeout
+RUN sudo pip3 install --break-system-packages --ignore-installed cryptography \
+    'numpy<2' onnxruntime anthropic openai google-genai pymavlink MAVProxy future pytest-timeout fastmcp
 
 ENV PATH=/home/ubuntu/ardupilot/Tools/autotest:${PATH}
 ENV GZ_SIM_SYSTEM_PLUGIN_PATH=/home/ubuntu/ardupilot_gazebo/build
