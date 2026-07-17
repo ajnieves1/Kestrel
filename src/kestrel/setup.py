@@ -27,6 +27,7 @@ setup(
          + glob('models/defect_marker/*.png')),
     ],
     install_requires=['setuptools'],
+    tests_require=['pytest'],
     zip_safe=True,
     maintainer='Andrew Nieves',
     maintainer_email='andrewjnieves1@gmail.com',
