@@ -1,5 +1,7 @@
 # ROS Project
 
+![ci](https://github.com/ajnieves1/Kestrel/actions/workflows/ci.yaml/badge.svg)
+
 Autonomous inspection drone. A copter flies a structure in simulation, finds
 defects with onboard vision, flies closer to confirm, and writes a plain
 language inspection report with an LLM API
