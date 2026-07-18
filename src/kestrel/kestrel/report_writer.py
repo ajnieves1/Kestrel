@@ -1,5 +1,7 @@
 # Collect mission data and write an inspection report when the mission lands
 import base64
+import json
+import math
 import os
 import shutil
 import time
@@ -32,6 +34,9 @@ PROVIDER_KEY_ENV_VARS = {
     'gemini': 'GEMINI_API_KEY',
 }
 
+# Defects within this many meters of a previous defect count as the same one
+MATCH_RADIUS_METERS = 3.0
+
 
 # Collect mission data and write an inspection report when the mission lands
 class ReportWriter(Node):
@@ -41,9 +46,11 @@ class ReportWriter(Node):
 
         self.declare_parameter('llm_provider', 'claude')
         self.declare_parameter('llm_model', '')
+        self.declare_parameter('site_name', 'pylon')
 
         self.llm_provider = self.get_parameter('llm_provider').value
         self.llm_model = self.get_parameter('llm_model').value
+        self.site_name = self.get_parameter('site_name').value
 
         self.defect_events = []
         self.takeoff_time = None
@@ -184,6 +191,72 @@ class ReportWriter(Node):
         with open(photo_path, 'rb') as photo_file:
             return base64.b64encode(photo_file.read()).decode('utf-8')
 
+    # Write the machine readable defect record next to the report
+    def write_defects_json(self, report_directory, defect_summaries):
+        duration_seconds = time.time() - self.takeoff_time if self.takeoff_time else 0.0
+        record = {
+            'timestamp': os.path.basename(report_directory),
+            'site': self.site_name,
+            'duration_seconds': duration_seconds,
+            'defects': [
+                {
+                    'label': summary['label'],
+                    'confidence': summary['confidence'],
+                    'north': summary['world_position'].x,
+                    'east': summary['world_position'].y,
+                    'altitude': summary['world_position'].z,
+                    'image': os.path.basename(summary['photo_path']),
+                }
+                for summary in defect_summaries
+            ],
+        }
+        with open(os.path.join(report_directory, 'defects.json'), 'w') as defects_file:
+            json.dump(record, defects_file, indent=2)
+
+    # Load the newest previous defects.json for this site, None when absent
+    def load_previous_defects(self):
+        if not os.path.isdir('reports'):
+            return None
+
+        matching_records = []
+        for entry_name in sorted(os.listdir('reports')):
+            defects_path = os.path.join('reports', entry_name, 'defects.json')
+            if not os.path.isfile(defects_path):
+                continue
+            with open(defects_path) as defects_file:
+                record = json.load(defects_file)
+            if record.get('site') == self.site_name:
+                matching_records.append(record)
+
+        return matching_records[-1] if matching_records else None
+
+    # Classify defects as new, persistent, or resolved against the previous run
+    def compare_defects(self, defect_summaries, previous_record):
+        unmatched_previous = list(previous_record['defects']) if previous_record else []
+
+        new_defects = []
+        persistent_defects = []
+        for summary in defect_summaries:
+            position = summary['world_position']
+            closest_index = None
+            closest_distance = MATCH_RADIUS_METERS
+            for index, previous_defect in enumerate(unmatched_previous):
+                distance = math.sqrt(
+                    (position.x - previous_defect['north']) ** 2
+                    + (position.y - previous_defect['east']) ** 2
+                    + (position.z - previous_defect['altitude']) ** 2)
+                if distance <= closest_distance:
+                    closest_distance = distance
+                    closest_index = index
+
+            if closest_index is None:
+                new_defects.append(summary)
+            else:
+                persistent_defects.append(summary)
+                unmatched_previous.pop(closest_index)
+
+        return new_defects, persistent_defects, unmatched_previous
+
     # Write report.md and move the photo directory into a timestamped folder
     def write_report(self):
         timestamp = time.strftime('%Y%m%d_%H%M%S')
@@ -202,6 +275,11 @@ class ReportWriter(Node):
                     os.path.basename(defect_event.image_path)),
             })
 
+        previous_record = self.load_previous_defects()
+        new_defects, persistent_defects, resolved_defects = self.compare_defects(
+            defect_summaries, previous_record)
+        self.write_defects_json(report_directory, defect_summaries)
+
         findings_text = self.request_findings(defect_summaries)
 
         duration_seconds = time.time() - self.takeoff_time if self.takeoff_time else 0.0
@@ -211,6 +289,36 @@ class ReportWriter(Node):
         else:
             model_used = 'none'
             provider_used = 'none'
+
+        if previous_record is None:
+            changes_lines = [
+                '## Changes',
+                '',
+                'First inspection of this site, no previous mission to compare',
+            ]
+        else:
+            changes_lines = [
+                f"## Changes since {previous_record['timestamp']}",
+                '',
+                '| Status | Label | North | East | Altitude |',
+                '|---|---|---|---|---|',
+            ]
+            for summary in new_defects:
+                position = summary['world_position']
+                changes_lines.append(
+                    f"| new | {summary['label']} | {position.x:.2f} | "
+                    f"{position.y:.2f} | {position.z:.2f} |")
+            for summary in persistent_defects:
+                position = summary['world_position']
+                changes_lines.append(
+                    f"| persistent | {summary['label']} | {position.x:.2f} | "
+                    f"{position.y:.2f} | {position.z:.2f} |")
+            for previous_defect in resolved_defects:
+                changes_lines.append(
+                    f"| resolved | {previous_defect['label']} | "
+                    f"{previous_defect['north']:.2f} | "
+                    f"{previous_defect['east']:.2f} | "
+                    f"{previous_defect['altitude']:.2f} |")
 
         report_lines = [
             f'# Inspection report, {time.strftime("%Y-%m-%d")}',
@@ -224,6 +332,8 @@ class ReportWriter(Node):
             '## Findings',
             '',
             findings_text or 'Findings unavailable, no API key or the request failed',
+            '',
+            *changes_lines,
             '',
             '## Appendix, raw detections',
             '',

@@ -39,3 +39,4 @@ report_writer:
   ros__parameters:
     llm_provider: claude
     llm_model: ""
+    site_name: pylon
