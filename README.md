@@ -19,7 +19,7 @@ flowchart TB
     sitl[ArduCopter SITL]
     mavros[MAVROS 2]
 
-    subgraph graph[ROS 2 graph, ROS Project nodes]
+    subgraph nodes[ROS 2 graph, ROS Project nodes]
         telemetry[telemetry_monitor: watches state and battery]
         commander[flight_commander: arm, takeoff, goto, land]
         guard[safety_guard: geofence, battery, RTL]
@@ -35,7 +35,7 @@ flowchart TB
     sim -- physics and motors --> sitl
     sim -- camera frames --> detector
     sitl -- MAVLink udp 14550 --> mavros
-    mavros -- ROS 2 topics and services --> graph
+    mavros -- ROS 2 topics and services --> nodes
     director --> planner
     director --> commander
     detector --> director
