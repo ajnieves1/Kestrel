@@ -61,8 +61,11 @@ RUN git clone https://github.com/ArduPilot/ardupilot_gazebo.git && \
     cmake --build build -j4
 
 # Vision inference, LLM report writer SDKs, and MAVLink tooling
+# numpy and pytest pinned below the versions fastmcp's dependency chain
+# otherwise pulls in: numpy 2 breaks apt's cv2 build, pytest 8+ drops the
+# path argument ROS's own launch_testing pytest plugin still relies on
 RUN sudo pip3 install --break-system-packages --ignore-installed cryptography \
-    'numpy<2' onnxruntime anthropic openai google-genai pymavlink MAVProxy future pytest-timeout fastmcp
+    'numpy<2' 'pytest<8' onnxruntime anthropic openai google-genai pymavlink MAVProxy future pytest-timeout fastmcp
 
 ENV PATH=/home/ubuntu/ardupilot/Tools/autotest:${PATH}
 ENV GZ_SIM_SYSTEM_PLUGIN_PATH=/home/ubuntu/ardupilot_gazebo/build
