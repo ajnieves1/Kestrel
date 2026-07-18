@@ -27,7 +27,10 @@ flowchart TB
         planner[inspection_planner: survey grid plus closer look]
         director[mission_director: state machine, runs a job]
         writer[report_writer: LLM API, writes report]
+        mcp[mcp_server: MCP tools over stdio]
     end
+
+    llm[LLM client, Claude Desktop or Claude Code]
 
     sim -- physics and motors --> sitl
     sim -- camera frames --> detector
@@ -37,6 +40,9 @@ flowchart TB
     director --> commander
     detector --> director
     director --> writer
+    llm -- MCP over stdio --> mcp
+    mcp --> commander
+    mcp --> guard
 ```
 
 One mission: `mission_director` asks `inspection_planner` for a survey path
@@ -57,6 +63,48 @@ docker compose -f docker/compose.yaml run --rm dev ros2 launch kestrel mission.l
 For the Gazebo GUI instead of headless, drop `headless:=true` and run
 `xhost +local:` on the host once first.
 
+## Talk to it
+
+The flight stack doubles as an MCP server, so an LLM client can fly the sim
+and do the following: ask for telemetry, command a takeoff, send it to a
+position, land it. Every command routes through the same guarded services
+the autonomous mission uses, and the safety guard keeps final authority.
+
+Start the flight stack in a container named `kestrel`:
+
+```bash
+docker compose -f docker/compose.yaml --profile headless run --rm --name kestrel headless \
+  bash -c "source install/setup.bash && ros2 launch kestrel sitl.launch.py headless:=true & \
+           sleep 5 && ros2 run kestrel flight_commander & \
+           sleep 2 && ros2 run kestrel safety_guard & wait"
+```
+
+Claude Desktop (Mac or Windows), add to `claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "kestrel": {
+      "command": "docker",
+      "args": ["exec", "-i", "kestrel", "bash", "-c",
+               "source /opt/ros/jazzy/setup.bash && source /ws/install/setup.bash && ros2 run kestrel mcp_server"]
+    }
+  }
+}
+```
+
+Claude Code (any platform), one command instead:
+
+```bash
+claude mcp add kestrel -- docker exec -i kestrel bash -c \
+  "source /opt/ros/jazzy/setup.bash && source /ws/install/setup.bash && ros2 run kestrel mcp_server"
+```
+
+Then open a new session and ask it to check telemetry, take off to 3
+meters, or land. Tools: `takeoff`, `goto`, `land`, `abort`,
+`get_telemetry`, `get_mission_state`. Finished mission reports are exposed
+as MCP resources under `kestrel://reports`.
+
 ## Sample report
 
 A full mission run with no LLM API key set writes an appendix only report:
@@ -74,6 +122,7 @@ A full mission run with no LLM API key set writes an appendix only report:
 | Gazebo Harmonic | Physics sim and camera |
 | OpenCV ArUco | v1 defect detector |
 | LLM report writer | Claude, OpenAI, or Gemini, provider chosen by a parameter |
+| FastMCP | MCP server, LLM clients fly the sim conversationally |
 | Docker | One dev image on every machine |
 | GitHub Actions | CI with a real SITL flight test on every push |
 
