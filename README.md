@@ -1,4 +1,4 @@
-# ROS Project
+# Kestrel
 
 ![ci](https://github.com/ajnieves1/Kestrel/actions/workflows/ci.yaml/badge.svg)
 
@@ -19,7 +19,7 @@ flowchart TB
     sitl[ArduCopter SITL]
     mavros[MAVROS 2]
 
-    subgraph nodes[ROS 2 graph, ROS Project nodes]
+    subgraph nodes[ROS 2 graph, Kestrel nodes]
         telemetry[telemetry_monitor: watches state and battery]
         commander[flight_commander: arm, takeoff, goto, land]
         guard[safety_guard: geofence, battery, RTL]
