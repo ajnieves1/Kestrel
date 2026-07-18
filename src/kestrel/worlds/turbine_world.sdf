@@ -1,0 +1,192 @@
+<?xml version="1.0" ?>
+<sdf version="1.9">
+  <!-- Gazebo world xy is east north (ENU), z is up -->
+  <world name="turbine_world">
+    <physics name="1ms" type="ignore">
+      <max_step_size>0.001</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+    </physics>
+
+    <plugin filename="gz-sim-physics-system"
+      name="gz::sim::systems::Physics">
+    </plugin>
+    <plugin filename="gz-sim-sensors-system"
+      name="gz::sim::systems::Sensors">
+      <render_engine>ogre2</render_engine>
+    </plugin>
+    <plugin filename="gz-sim-user-commands-system"
+      name="gz::sim::systems::UserCommands">
+    </plugin>
+    <plugin filename="gz-sim-scene-broadcaster-system"
+      name="gz::sim::systems::SceneBroadcaster">
+    </plugin>
+    <plugin filename="gz-sim-imu-system"
+      name="gz::sim::systems::Imu">
+    </plugin>
+    <plugin filename="gz-sim-navsat-system"
+      name="gz::sim::systems::NavSat">
+    </plugin>
+
+    <scene>
+      <ambient>1.0 1.0 1.0</ambient>
+      <background>0.8 0.8 0.9</background>
+      <sky></sky>
+    </scene>
+
+    <spherical_coordinates>
+      <latitude_deg>-35.363262</latitude_deg>
+      <longitude_deg>149.165237</longitude_deg>
+      <elevation>584</elevation>
+      <heading_deg>0</heading_deg>
+      <surface_model>EARTH_WGS84</surface_model>
+    </spherical_coordinates>
+
+    <light type="directional" name="sun">
+      <cast_shadows>true</cast_shadows>
+      <pose>0 0 10 0 0 0</pose>
+      <diffuse>0.8 0.8 0.8 1</diffuse>
+      <specular>0.8 0.8 0.8 1</specular>
+      <attenuation>
+        <range>1000</range>
+        <constant>0.9</constant>
+        <linear>0.01</linear>
+        <quadratic>0.001</quadratic>
+      </attenuation>
+      <direction>-0.5 0.1 -0.9</direction>
+    </light>
+
+    <model name="ground_plane">
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>200 200</size>
+            </plane>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>200 200</size>
+            </plane>
+          </geometry>
+          <material>
+            <ambient>0.3 0.4 0.3 1</ambient>
+            <diffuse>0.3 0.4 0.3 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Tower center is north 15 east 0, Gazebo xy is east north, so Gazebo
+         pose 0 15, model origin stays at ground level like the pylon world,
+         the cylinder link itself is offset up to its own half height -->
+    <model name="turbine">
+      <static>true</static>
+      <pose>0 15 0 0 0 0</pose>
+      <link name="frame">
+      <collision name="tower_col">
+        <pose>0 0 9 0 0 0</pose>
+        <geometry>
+          <cylinder><radius>0.8</radius><length>18</length></cylinder>
+        </geometry>
+      </collision>
+      <visual name="tower_vis">
+        <pose>0 0 9 0 0 0</pose>
+        <geometry>
+          <cylinder><radius>0.8</radius><length>18</length></cylinder>
+        </geometry>
+        <material>
+          <ambient>0.85 0.85 0.85 1</ambient>
+          <diffuse>0.85 0.85 0.85 1</diffuse>
+        </material>
+      </visual>
+
+      <collision name="nacelle_col">
+        <pose>0 0 18.75 0 0 0</pose>
+        <geometry>
+          <box><size>3.0 1.5 1.5</size></box>
+        </geometry>
+      </collision>
+      <visual name="nacelle_vis">
+        <pose>0 0 18.75 0 0 0</pose>
+        <geometry>
+          <box><size>3.0 1.5 1.5</size></box>
+        </geometry>
+        <material>
+          <ambient>0.3 0.3 0.32 1</ambient>
+          <diffuse>0.3 0.3 0.32 1</diffuse>
+        </material>
+      </visual>
+
+      <!-- Hub at 19 m, blades parked in a Y: one straight up, two rolled
+           120 degrees each way, lowest blade tip 15 m, tallest 27 m -->
+      <collision name="blade_up_col">
+        <pose>0 0 23 0 0 0</pose>
+        <geometry>
+          <box><size>0.2 0.5 8</size></box>
+        </geometry>
+      </collision>
+      <visual name="blade_up_vis">
+        <pose>0 0 23 0 0 0</pose>
+        <geometry>
+          <box><size>0.2 0.5 8</size></box>
+        </geometry>
+        <material>
+          <ambient>0.9 0.9 0.9 1</ambient>
+          <diffuse>0.9 0.9 0.9 1</diffuse>
+        </material>
+      </visual>
+
+      <collision name="blade_left_col">
+        <pose>0 -3.464 17 2.0944 0 0</pose>
+        <geometry>
+          <box><size>0.2 0.5 8</size></box>
+        </geometry>
+      </collision>
+      <visual name="blade_left_vis">
+        <pose>0 -3.464 17 2.0944 0 0</pose>
+        <geometry>
+          <box><size>0.2 0.5 8</size></box>
+        </geometry>
+        <material>
+          <ambient>0.9 0.9 0.9 1</ambient>
+          <diffuse>0.9 0.9 0.9 1</diffuse>
+        </material>
+      </visual>
+
+      <collision name="blade_right_col">
+        <pose>0 3.464 17 -2.0944 0 0</pose>
+        <geometry>
+          <box><size>0.2 0.5 8</size></box>
+        </geometry>
+      </collision>
+      <visual name="blade_right_vis">
+        <pose>0 3.464 17 -2.0944 0 0</pose>
+        <geometry>
+          <box><size>0.2 0.5 8</size></box>
+        </geometry>
+        <material>
+          <ambient>0.9 0.9 0.9 1</ambient>
+          <diffuse>0.9 0.9 0.9 1</diffuse>
+        </material>
+      </visual>
+      </link>
+    </model>
+
+    <!-- Same pose as the turbine, marker link poses are local offsets from it -->
+    <include>
+      <uri>model://defect_marker_turbine</uri>
+      <pose>0 15 0 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://kestrel_iris</uri>
+      <pose>0 0 0 0 0 0</pose>
+    </include>
+
+  </world>
+</sdf>

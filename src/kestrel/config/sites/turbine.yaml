@@ -1,0 +1,19 @@
+/**:
+  ros__parameters:
+    world: turbine_world
+
+mission_director:
+  ros__parameters:
+    structure_height: 14.0
+    transit_altitude: 29.0
+
+report_writer:
+  ros__parameters:
+    site_name: turbine
+
+ground_truth:
+  ros__parameters:
+    marker_0_position: [15.81, 0.0, 4.0]
+    marker_1_position: [15.0, 0.81, 7.0]
+    marker_2_position: [14.19, 0.0, 10.0]
+    marker_3_position: [15.0, -0.81, 13.0]

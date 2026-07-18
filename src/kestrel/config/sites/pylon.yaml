@@ -1,0 +1,7 @@
+/**:
+  ros__parameters:
+    world: pylon_world
+
+report_writer:
+  ros__parameters:
+    site_name: pylon

@@ -40,6 +40,7 @@ class MissionDirector(Node):
         self.declare_parameter('investigate_orbit_radius', 4.0)
         self.declare_parameter('investigate_waypoint_count', 8)
         self.declare_parameter('return_altitude', 5.0)
+        self.declare_parameter('transit_altitude', 0.0)
         self.declare_parameter('auto_start', True)
 
         self.structure_center_north = self.get_parameter('structure_center_north').value
@@ -51,6 +52,7 @@ class MissionDirector(Node):
         self.investigate_waypoint_count = self.get_parameter(
             'investigate_waypoint_count').value
         self.return_altitude = self.get_parameter('return_altitude').value
+        self.transit_altitude = self.get_parameter('transit_altitude').value
         self.auto_start = self.get_parameter('auto_start').value
 
         self.state = 'IDLE'
@@ -129,9 +131,13 @@ class MissionDirector(Node):
             self.structure_height, self.survey_orbit_radius, self.survey_climb_step)
 
         # A straight line from home to the first waypoint crosses the
-        # structure, climb above it and approach from over the top instead
+        # structure, climb above it and approach from over the top instead.
+        # structure_height is not always the tallest point (a turbine's
+        # blades reach higher), a site sets transit_altitude when it isn't
         first_waypoint = survey_path[0]
-        safe_altitude = self.structure_height + SAFE_TRANSIT_CLEARANCE_METERS
+        safe_altitude = (
+            self.transit_altitude if self.transit_altitude > 0.0
+            else self.structure_height + SAFE_TRANSIT_CLEARANCE_METERS)
         climb_waypoint = Waypoint(north=0.0, east=0.0, altitude=safe_altitude, yaw_deg=0.0)
         approach_waypoint = Waypoint(
             north=first_waypoint.north, east=first_waypoint.east,

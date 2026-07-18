@@ -18,6 +18,8 @@ setup(
          glob('launch/*.launch.py')),
         (os.path.join('share', package_name, 'config'),
          glob('config/*.yaml')),
+        (os.path.join('share', package_name, 'config', 'sites'),
+         glob('config/sites/*.yaml')),
         (os.path.join('share', package_name, 'worlds'),
          glob('worlds/*.sdf')),
         (os.path.join('share', package_name, 'scripts'),
@@ -27,6 +29,9 @@ setup(
         (os.path.join('share', package_name, 'models', 'defect_marker'),
          glob('models/defect_marker/*.sdf') + glob('models/defect_marker/*.config')
          + glob('models/defect_marker/*.png')),
+        (os.path.join('share', package_name, 'models', 'defect_marker_turbine'),
+         glob('models/defect_marker_turbine/*.sdf')
+         + glob('models/defect_marker_turbine/*.config')),
     ],
     install_requires=['setuptools'],
     tests_require=['pytest'],

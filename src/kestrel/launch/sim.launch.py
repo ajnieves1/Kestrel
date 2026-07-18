@@ -1,25 +1,29 @@
 # Launch the Gazebo world, SITL with the Gazebo frame, MAVROS, and the camera bridge
 import os
 
+import yaml
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, ExecuteProcess
+from launch.actions import DeclareLaunchArgument, ExecuteProcess, OpaqueFunction
 from launch.conditions import IfCondition, UnlessCondition
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 
 
-# Build the launch description with Gazebo, SITL, MAVROS, and the camera bridge
-def generate_launch_description():
+# Read the site overlay for the world file, then build the sim actions
+def launch_setup(context, *args, **kwargs):
     package_share = get_package_share_directory('kestrel')
     params_file = os.path.join(package_share, 'config', 'kestrel_params.yaml')
-    world_file = os.path.join(package_share, 'worlds', 'pylon_world.sdf')
     run_sitl_script = os.path.join(package_share, 'scripts', 'run_sitl.sh')
 
+    site = LaunchConfiguration('site').perform(context)
+    site_overlay_file = os.path.join(package_share, 'config', 'sites', f'{site}.yaml')
+    with open(site_overlay_file) as overlay_stream:
+        site_overlay = yaml.safe_load(overlay_stream)
+    world_name = site_overlay['/**']['ros__parameters']['world']
+    world_file = os.path.join(package_share, 'worlds', f'{world_name}.sdf')
+
     headless = LaunchConfiguration('headless')
-    headless_argument = DeclareLaunchArgument(
-        'headless', default_value='false',
-        description='Run Gazebo without a graphical client when true')
 
     # Headless runs the Gazebo server only, otherwise start the client too
     gazebo_headless = ExecuteProcess(
@@ -41,7 +45,7 @@ def generate_launch_description():
     mavros_node = Node(
         package='mavros',
         executable='mavros_node',
-        parameters=[params_file],
+        parameters=[params_file, site_overlay_file],
         output='screen')
 
     # Bridge the Gazebo camera image and info topics into ROS
@@ -54,6 +58,17 @@ def generate_launch_description():
         ],
         output='screen')
 
+    return [gazebo_headless, gazebo_gui, sitl_process, mavros_node, camera_bridge]
+
+
+# Build the launch description with Gazebo, SITL, MAVROS, and the camera bridge
+def generate_launch_description():
+    headless_argument = DeclareLaunchArgument(
+        'headless', default_value='false',
+        description='Run Gazebo without a graphical client when true')
+    site_argument = DeclareLaunchArgument(
+        'site', default_value='pylon',
+        description='Site overlay under config/sites selecting the world and geometry')
+
     return LaunchDescription([
-        headless_argument, gazebo_headless, gazebo_gui, sitl_process,
-        mavros_node, camera_bridge])
+        headless_argument, site_argument, OpaqueFunction(function=launch_setup)])

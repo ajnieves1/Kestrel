@@ -33,6 +33,7 @@ mission_director:
     investigate_orbit_radius: 4.0
     investigate_waypoint_count: 8
     return_altitude: 5.0
+    transit_altitude: 0.0
     auto_start: true
 
 report_writer:
