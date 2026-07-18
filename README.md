@@ -30,7 +30,6 @@ flowchart TB
         mcp[mcp_server: MCP tools over stdio]
     end
 
-    llm[LLM client, Claude Desktop or Claude Code]
 
     sim -- physics and motors --> sitl
     sim -- camera frames --> detector
@@ -40,7 +39,7 @@ flowchart TB
     director --> commander
     detector --> director
     director --> writer
-    llm -- MCP over stdio --> mcp
+    mcp
     mcp --> commander
     mcp --> guard
 ```
