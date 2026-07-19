@@ -144,15 +144,14 @@ Live detection inside the simulation has a known limitation. A neural
 network that trains on photographs does not reliably recognize the same
 photograph when the simulation renders it as a flat texture under
 simulated light. This is a real gap between simulated data and real data.
-It is not a false result. See [docs/benchmarks.md](docs/benchmarks.md) and
-the task 21 notes in `progress.md` for the measured numbers.
+It is not a false result. See [docs/benchmarks.md](docs/benchmarks.md).
 
 OpenCV ArUco detection is also available. Set the parameter
 `detector_backend` to `aruco` to use it. The marker boards now show
 corrosion photos instead of ArUco patterns. For this reason, the ArUco
 detector also finds no markers in the current simulation. Earlier versions
 of this project proved the ArUco detector reliable against ArUco marker
-boards. See the git history near task 11 for that evidence.
+boards.
 
 ## Stack
 
