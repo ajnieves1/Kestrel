@@ -23,6 +23,4 @@ detection matches a real marker. Only one of the four detections in that
 row was a true marker: north 16.31, east -0.01, altitude 4.87, a distance
 of 0.37 m from the ground truth position of `marker_0`. The other three
 detections are false positives. Each false positive matched to whichever
-ground truth marker was nearest. See the task 21 notes in `progress.md`
-for the full explanation. This is a known, documented limitation of the
-detector inside the simulation. It is not a scoring error.
+ground truth marker was nearest.
