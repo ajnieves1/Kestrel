@@ -1,0 +1,295 @@
+/* Kestrel field guide theme. Palette from Falco sparverius: rufous back
+   and tail, slate blue wings, buff breast, black tail band. Prose set in
+   serif like a field guide plate, data set in mono like a ground station. */
+
+:root {
+  color-scheme: light dark;
+  --paper: #f3e9d2;
+  --paper-panel: #fbf5e6;
+  --ink: #26201a;
+  --ink-dim: #6b5d49;
+  --rufous: #9c3f1c;
+  --slate: #46687e;
+  --band: #1c1613;
+  --border: #d8c5a3;
+  --serif: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
+  --mono: ui-monospace, 'SF Mono', 'Cascadia Code', Menlo, Consolas, monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #14100c;
+    --paper-panel: #1d1712;
+    --ink: #efe3cb;
+    --ink-dim: #a08e73;
+    --rufous: #cf6636;
+    --slate: #7d9cb0;
+    --band: #efe3cb;
+    --border: #3a2f23;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--serif);
+  font-size: 1.05rem;
+  line-height: 1.65;
+}
+
+/* Kestrel tail band: rufous, black subterminal band, pale tip */
+body::before {
+  content: '';
+  display: block;
+  height: 12px;
+  background: linear-gradient(
+    to bottom,
+    #b34a22 0 55%,
+    #1c1613 55% 85%,
+    #e8d5ae 85% 100%);
+}
+
+main {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 0 1.5rem 3rem;
+  counter-reset: section;
+}
+
+header.hero {
+  text-align: center;
+  padding: 3.5rem 1.5rem 2rem;
+}
+
+.hero-mark {
+  width: 76px;
+  height: auto;
+  fill: var(--ink);
+  opacity: 0.85;
+  margin-bottom: 0.75rem;
+}
+
+header.hero h1 {
+  font-size: 3rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin: 0 0 0.35rem;
+}
+
+.species-line {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--rufous);
+  margin: 0 0 1.1rem;
+}
+
+header.hero p.pitch {
+  color: var(--ink-dim);
+  font-size: 1.12rem;
+  font-style: italic;
+  max-width: 34em;
+  margin: 0 auto 1.75rem;
+}
+
+header.hero img {
+  max-width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+}
+
+section {
+  margin: 3rem 0;
+}
+
+/* Section headers as numbered specimen labels */
+section h2 {
+  font-family: var(--mono);
+  font-size: 0.92rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+main section h2::before {
+  counter-increment: section;
+  content: counter(section, decimal-leading-zero) ' / ';
+  color: var(--rufous);
+}
+
+.panel {
+  background: var(--paper-panel);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 1rem;
+}
+
+/* Replay viewer as a cockpit instrument, dark in both themes */
+.instrument {
+  background: #1a140f;
+  border-color: #3a2c1f;
+  color: #e8d8b8;
+}
+
+.replay-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+  font-family: var(--mono);
+  font-size: 0.85rem;
+}
+
+.instrument .replay-controls select,
+.instrument .replay-controls button {
+  background: #120d09;
+  color: #e8d8b8;
+  border: 1px solid #3a2c1f;
+  border-radius: 3px;
+  padding: 0.4rem 0.6rem;
+  font-family: var(--mono);
+  font-size: 0.85rem;
+}
+
+.replay-controls input[type='range'] {
+  flex: 1;
+  min-width: 150px;
+  accent-color: #cf6636;
+}
+
+#replay-canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-width: 100%;
+  background: #120d09;
+  border: 1px solid #3a2c1f;
+  border-radius: 3px;
+}
+
+.replay-status {
+  display: flex;
+  justify-content: space-between;
+  color: #b3a184;
+  font-family: var(--mono);
+  font-size: 0.82rem;
+  margin-top: 0.5rem;
+}
+
+.replay-status strong {
+  color: #e8d8b8;
+}
+
+#photo-panel {
+  margin-top: 0.75rem;
+  font-family: var(--mono);
+  font-size: 0.85rem;
+}
+
+#photo-panel img {
+  max-width: 100%;
+  border-radius: 3px;
+  border: 1px solid #3a2c1f;
+}
+
+.replay-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  color: #b3a184;
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  margin-top: 0.75rem;
+}
+
+.legend-swatch {
+  display: inline-block;
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 50%;
+  margin-right: 0.35rem;
+  vertical-align: middle;
+}
+
+ol li::marker {
+  font-family: var(--mono);
+  font-size: 0.85em;
+  color: var(--rufous);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--mono);
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+
+th, td {
+  text-align: left;
+  padding: 0.5rem 0.6rem;
+  border-bottom: 1px solid var(--border);
+}
+
+th {
+  color: var(--ink-dim);
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+}
+
+code {
+  font-family: var(--mono);
+  background: var(--paper-panel);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 0.1rem 0.35rem;
+  font-size: 0.85em;
+}
+
+pre {
+  background: var(--paper-panel);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--rufous);
+  border-radius: 3px;
+  padding: 1rem;
+  overflow-x: auto;
+  font-family: var(--mono);
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+pre code {
+  border: none;
+  padding: 0;
+  background: none;
+  font-size: 1em;
+}
+
+a {
+  color: var(--rufous);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+footer {
+  text-align: center;
+  color: var(--ink-dim);
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  padding: 2rem 0 1.5rem;
+  border-top: 1px solid var(--border);
+  margin-top: 2rem;
+}

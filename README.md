@@ -2,6 +2,9 @@
 
 ![ci](https://github.com/ajnieves1/Kestrel/actions/workflows/ci.yaml/badge.svg)
 
+See the project site with a live mission replay at
+[ajnieves1.github.io/Kestrel](https://ajnieves1.github.io/Kestrel/).
+
 ![Mission flight](docs/mission.gif)
 
 The copter flies around a structure. It finds defects with a camera and an

@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kestrel, an autonomous inspection drone</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 90'%3E%3Cpath fill='%239c3f1c' d='M60 8 C56 12 52 15 46 17 C34 20 20 24 8 30 C16 32 28 32 40 31 C36 40 33 50 32 60 C36 55 42 50 48 47 C50 58 52 68 55 78 L60 84 L65 78 C68 68 70 58 72 47 C78 50 84 55 88 60 C87 50 84 40 80 31 C92 32 104 32 112 30 C100 24 86 20 74 17 C68 15 64 12 60 8 Z'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="hero">
+  <svg class="hero-mark" viewBox="0 0 120 90" role="img" aria-label="Hovering kestrel silhouette">
+    <path d="M60 8 C56 12 52 15 46 17 C34 20 20 24 8 30 C16 32 28 32 40 31 C36 40 33 50 32 60 C36 55 42 50 48 47 C50 58 52 68 55 78 L60 84 L65 78 C68 68 70 58 72 47 C78 50 84 55 88 60 C87 50 84 40 80 31 C92 32 104 32 112 30 C100 24 86 20 74 17 C68 15 64 12 60 8 Z"/>
+  </svg>
+  <h1>Kestrel</h1>
+  <p class="species-line">Falco sparverius</p>
+  <p class="pitch">The copter flies around a structure, finds defects with a vision model, and writes an inspection report.</p>
+  <img src="mission.gif" alt="A recorded Kestrel mission flight in Gazebo">
+</header>
+
+<main>
+
+<section id="replay">
+  <h2>Watch a real mission</h2>
+  <p>
+    This viewer plays back a real recorded flight. It is not an animation.
+    The flight path and mission states come from
+    <code>scripts/record_replay.py</code>, run alongside a live simulated
+    mission.
+  </p>
+  <div class="panel instrument">
+    <div class="replay-controls">
+      <label for="site-select">Site</label>
+      <select id="site-select">
+        <option value="pylon">Pylon</option>
+        <option value="turbine">Turbine</option>
+      </select>
+      <button id="play-button" type="button">Play</button>
+      <input id="scrub-input" type="range" min="0" max="100" step="0.1" value="0">
+      <select id="speed-select">
+        <option value="1">1x</option>
+        <option value="2">2x</option>
+        <option value="4">4x</option>
+        <option value="0.5">0.5x</option>
+      </select>
+    </div>
+    <canvas id="replay-canvas" width="800" height="600"></canvas>
+    <div class="replay-status">
+      <span>State: <strong id="state-label">IDLE</strong></span>
+      <span id="time-label">0.0s / 0.0s</span>
+    </div>
+    <div class="replay-legend">
+      <span><span class="legend-swatch" style="background:#cf6636"></span>Flown path and copter</span>
+      <span><span class="legend-swatch" style="background:#7d9cb0"></span>Ground truth marker</span>
+      <span><span class="legend-swatch" style="background:#f2e7cf"></span>Confirmed defect, click a pin for its photo</span>
+    </div>
+    <div id="photo-panel"></div>
+  </div>
+  <p>
+    Both recordings use the shipped YOLO detector at its production
+    confidence threshold. Live in-sim detection has a known limitation,
+    a domain gap between real training photos and simulated textures.
+    Neither recording found a confirmed defect. This is the honest,
+    measured behavior of the shipped system, not a demo shortcut. See
+    <a href="https://github.com/ajnieves1/Kestrel/blob/main/docs/sample_report.md">a sample report with confirmed defects from an earlier ArUco run</a>
+    and the benchmarks table below for real detection numbers.
+  </p>
+</section>
+
+<section id="how-it-works">
+  <h2>How it works</h2>
+  <p>These steps happen during one mission.</p>
+  <ol>
+    <li>The mission planner builds a survey path around the structure.</li>
+    <li>The flight commander flies the copter to each waypoint.</li>
+    <li>The defect detector reads the camera feed during the whole flight.</li>
+    <li>On a detection, the mission director pauses the survey and flies a closer orbit around the defect.</li>
+    <li>The system stores each photo and each detection.</li>
+    <li>After landing, the report writer writes a report in markdown format.</li>
+  </ol>
+</section>
+
+<section id="benchmarks">
+  <h2>Benchmarks</h2>
+  <p>
+    These numbers come from <code>scripts/score_mission.py</code>, run
+    against real mission data. Detection rate is the count of defects
+    found over the count of ground truth markers. Localization error is
+    the distance from each detected defect to its nearest ground truth
+    marker.
+  </p>
+  <div class="panel" style="overflow-x: auto;">
+    <table>
+      <thead>
+        <tr><th>Site</th><th>Detector</th><th>Detection rate</th><th>Mean error (m)</th><th>Max error (m)</th><th>Duration (s)</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>pylon</td><td>aruco</td><td>4/4</td><td>2.04</td><td>2.15</td><td>349.1</td></tr>
+        <tr><td>pylon</td><td>yolo</td><td>4/4</td><td>3.21</td><td>6.72</td><td>246.2</td></tr>
+        <tr><td>turbine</td><td>aruco</td><td>3/4</td><td>1.93</td><td>2.28</td><td>258.5</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>
+    The <code>yolo</code> row counts raw detections against the ground
+    truth count. This number does not confirm that each detection
+    matches a real marker. Only one of the four detections in that row
+    was a true marker, 0.37 m from ground truth. See
+    <a href="https://github.com/ajnieves1/Kestrel/blob/main/docs/benchmarks.md">the full benchmarks file</a>
+    for the complete explanation.
+  </p>
+</section>
+
+<section id="talk-to-it">
+  <h2>Talk to it</h2>
+  <p>
+    The flight stack also works as an MCP server. An LLM client can fly
+    the simulation through this server. The client can ask for telemetry
+    data. The client can send a takeoff command. The client can send the
+    copter to a position. The client can send a land command. Every
+    command goes through the same guarded services that the autonomous
+    mission uses. The safety guard node keeps final control at all
+    times.
+  </p>
+  <p>
+    See <a href="https://github.com/ajnieves1/Kestrel#talk-to-it">the README</a>
+    for setup steps and the full tool list.
+  </p>
+</section>
+
+<section id="quick-start">
+  <h2>Quick start</h2>
+  <pre><code>git clone https://github.com/ajnieves1/Kestrel.git
+docker compose -f docker/compose.yaml build dev
+docker compose -f docker/compose.yaml run --rm dev ros2 launch kestrel mission.launch.py headless:=true</code></pre>
+</section>
+
+</main>
+
+<footer>
+  MIT license. <a href="https://github.com/ajnieves1/Kestrel">github.com/ajnieves1/Kestrel</a>
+</footer>
+
+<script src="replay.js"></script>
+</body>
+</html>
