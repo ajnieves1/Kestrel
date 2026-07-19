@@ -16,6 +16,8 @@
           <pbr>
             <metal>
               <albedo_map>marker_0.png</albedo_map>
+              <roughness>1.0</roughness>
+              <metalness>0.0</metalness>
             </metal>
           </pbr>
         </material>
@@ -35,6 +37,8 @@
           <pbr>
             <metal>
               <albedo_map>marker_1.png</albedo_map>
+              <roughness>1.0</roughness>
+              <metalness>0.0</metalness>
             </metal>
           </pbr>
         </material>
@@ -54,6 +58,8 @@
           <pbr>
             <metal>
               <albedo_map>marker_2.png</albedo_map>
+              <roughness>1.0</roughness>
+              <metalness>0.0</metalness>
             </metal>
           </pbr>
         </material>
@@ -73,6 +79,8 @@
           <pbr>
             <metal>
               <albedo_map>marker_3.png</albedo_map>
+              <roughness>1.0</roughness>
+              <metalness>0.0</metalness>
             </metal>
           </pbr>
         </material>

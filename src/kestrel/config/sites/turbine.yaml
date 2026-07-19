@@ -11,6 +11,10 @@ report_writer:
   ros__parameters:
     site_name: turbine
 
+defect_detector:
+  ros__parameters:
+    assumed_depth_m: 7.2
+
 ground_truth:
   ros__parameters:
     marker_0_position: [15.81, 0.0, 4.0]

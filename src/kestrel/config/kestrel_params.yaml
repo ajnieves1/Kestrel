@@ -22,6 +22,11 @@ defect_detector:
     inference_rate_hz: 5.0
     consecutive_frames_required: 5
     photo_directory: reports/current/photos
+    detector_backend: yolo
+    confidence_threshold: 0.5
+    dedupe_radius_m: 3.0
+    model_path: models/vision/defect.onnx
+    assumed_depth_m: 6.5
 
 mission_director:
   ros__parameters:
