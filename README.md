@@ -4,8 +4,9 @@
 
 ![Mission flight](docs/mission.gif)
 
-Copter flies a structure, finds defects with onboard vision AI, flies closer
-to confirm, and writes a plain language inspection report.
+The copter flies around a structure. It finds defects with a camera and an
+onboard vision model. It flies close to each defect to confirm the defect.
+It writes an inspection report in plain language.
 
 ## How it works
 
@@ -23,7 +24,7 @@ flowchart TB
         telemetry[telemetry_monitor: watches state and battery]
         commander[flight_commander: arm, takeoff, goto, land]
         guard[safety_guard: geofence, battery, RTL]
-        detector[defect_detector: ArUco detection on camera feed]
+        detector[defect_detector: YOLOv8n corrosion detection on camera feed]
         planner[inspection_planner: survey grid plus closer look]
         director[mission_director: state machine, runs a job]
         writer[report_writer: LLM API, writes report]
@@ -44,12 +45,18 @@ flowchart TB
     mcp --> guard
 ```
 
-One mission: `mission_director` asks `inspection_planner` for a survey path
-around the structure, feeds waypoints to `flight_commander`, `defect_detector`
-streams detections the whole time, on a detection the director pauses the
-survey and requests a closer orbit of that point, photos and detections
-accumulate, after landing `report_writer` turns them into a markdown report
-with photos embedded.
+These steps happen during one mission:
+
+1. `mission_director` asks `inspection_planner` for a survey path around the
+   structure.
+2. `mission_director` sends each waypoint to `flight_commander`.
+3. `defect_detector` sends detections to `mission_director` during the whole
+   flight.
+4. When a detection occurs, `mission_director` pauses the survey. It sends
+   the copter on a closer orbit around the defect.
+5. The system stores each photo and each detection.
+6. After the copter lands, `report_writer` writes a report in markdown
+   format. The report includes the stored photos.
 
 ## Quick start
 
@@ -59,17 +66,19 @@ docker compose -f docker/compose.yaml build dev
 docker compose -f docker/compose.yaml run --rm dev ros2 launch kestrel mission.launch.py headless:=true
 ```
 
-For the Gazebo GUI instead of headless, drop `headless:=true` and run
-`xhost +local:` on the host once first.
+To use the Gazebo GUI, remove `headless:=true` from the command. Before you
+run the command, run `xhost +local:` on the host computer one time.
 
 ## Talk to it
 
-The flight stack doubles as an MCP server, so an LLM client can fly the sim
-and do the following: ask for telemetry, command a takeoff, send it to a
-position, land it. Every command routes through the same guarded services
-the autonomous mission uses, and the safety guard keeps final authority.
+The flight stack also works as an MCP server. An LLM client can fly the
+simulation through this server. The client can ask for telemetry data. The
+client can send a takeoff command. The client can send the copter to a
+position. The client can send a land command. Every command goes through
+the same guarded services that the autonomous mission uses. The safety
+guard node keeps final control at all times.
 
-Start the flight stack in a container named `kestrel`:
+Use this command to start the flight stack in a container named `kestrel`:
 
 ```bash
 docker compose -f docker/compose.yaml --profile headless run --rm --name kestrel headless \
@@ -78,7 +87,8 @@ docker compose -f docker/compose.yaml --profile headless run --rm --name kestrel
            sleep 2 && ros2 run kestrel safety_guard & wait"
 ```
 
-Claude Desktop (Mac or Windows), add to `claude_desktop_config.json`:
+If you use Claude Desktop on a Mac or a Windows computer, add this code to
+the file `claude_desktop_config.json`:
 
 ```json
 {
@@ -92,38 +102,68 @@ Claude Desktop (Mac or Windows), add to `claude_desktop_config.json`:
 }
 ```
 
-Claude Code (any platform), one command instead:
+If you use Claude Code on any computer, use this command instead:
 
 ```bash
 claude mcp add kestrel -- docker exec -i kestrel bash -c \
   "source /opt/ros/jazzy/setup.bash && source /ws/install/setup.bash && ros2 run kestrel mcp_server"
 ```
 
-Then open a new session and ask it to check telemetry, take off to 3
-meters, or land. Tools: `takeoff`, `goto`, `land`, `abort`,
-`get_telemetry`, `get_mission_state`. Finished mission reports are exposed
-as MCP resources under `kestrel://reports`.
+Open a new session after you complete this step. Ask the client to check
+the telemetry data. Ask the client to send the copter to an altitude of 3
+meters. Ask the client to land the copter. The available tools are
+`takeoff`, `goto`, `land`, `abort`, `get_telemetry`, and
+`get_mission_state`. The system makes finished mission reports available
+as MCP resources. Find them at `kestrel://reports`.
 
 ## Sample report
 
-A full mission run with no LLM API key set writes an appendix only report:
+If you do not set an LLM API key, a full mission run writes a report with
+an appendix only. See an example report at
 [docs/sample_report.md](docs/sample_report.md).
 
 ![Marker view](docs/marker_view.png)
+
+## Model and data set
+
+The corrosion detector uses a YOLOv8n model. The training data set is
+[`Francesco/corrosion-bi3q3`](https://huggingface.co/datasets/Francesco/corrosion-bi3q3),
+part of the Roboflow 100 benchmark. This data set uses a CC BY 4.0 license.
+See [`models/vision/TRAINING.md`](models/vision/TRAINING.md) for the
+training steps.
+
+The four marker boards in the simulation show real corrosion photos from
+the validation split of the data set. The detector did not train on these
+specific photos. The validation mAP50 score is 0.617 on real photos. This
+is a true, measured result.
+
+Live detection inside the simulation has a known limitation. A neural
+network that trains on photographs does not reliably recognize the same
+photograph when the simulation renders it as a flat texture under
+simulated light. This is a real gap between simulated data and real data.
+It is not a false result. See [docs/benchmarks.md](docs/benchmarks.md) and
+the task 21 notes in `progress.md` for the measured numbers.
+
+OpenCV ArUco detection is also available. Set the parameter
+`detector_backend` to `aruco` to use it. The marker boards now show
+corrosion photos instead of ArUco patterns. For this reason, the ArUco
+detector also finds no markers in the current simulation. Earlier versions
+of this project proved the ArUco detector reliable against ArUco marker
+boards. See the git history near task 11 for that evidence.
 
 ## Stack
 
 | Piece | Role |
 |---|---|
-| ROS 2 Jazzy | Node graph, topics, services |
+| ROS 2 Jazzy | Node graph, topics, and services |
 | ArduPilot SITL | Flight controller simulation |
 | MAVROS 2 | MAVLink bridge into ROS 2 |
-| Gazebo Harmonic | Physics sim and camera |
-| OpenCV ArUco | v1 defect detector |
-| LLM report writer | Claude, OpenAI, or Gemini, provider chosen by a parameter |
-| FastMCP | MCP server, LLM clients fly the sim conversationally |
-| Docker | One dev image on every machine |
-| GitHub Actions | CI with a real SITL flight test on every push |
+| Gazebo Harmonic | Physics simulation and camera |
+| YOLOv8n (ONNX) | Defect detector. OpenCV ArUco stays available as a fallback |
+| LLM report writer | Claude, OpenAI, or Gemini. A parameter selects the provider |
+| FastMCP | MCP server for conversational control by LLM clients |
+| Docker | One development image for every computer |
+| GitHub Actions | CI runs a real SITL flight test on every push |
 
 ## License
 

@@ -6,7 +6,11 @@
 
 ## Findings
 
-Findings unavailable, no API key or the request failed
+No findings are available. The system found no API key, or the request failed.
+
+## Changes
+
+This is the first inspection of this site. There is no previous mission to compare.
 
 ## Appendix, raw detections
 

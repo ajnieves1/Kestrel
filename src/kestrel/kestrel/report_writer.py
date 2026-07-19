@@ -294,7 +294,8 @@ class ReportWriter(Node):
             changes_lines = [
                 '## Changes',
                 '',
-                'First inspection of this site, no previous mission to compare',
+                'This is the first inspection of this site. '
+                'There is no previous mission to compare.',
             ]
         else:
             changes_lines = [
@@ -331,7 +332,9 @@ class ReportWriter(Node):
             '',
             '## Findings',
             '',
-            findings_text or 'Findings unavailable, no API key or the request failed',
+            findings_text or (
+                'No findings are available. '
+                'The system found no API key, or the request failed.'),
             '',
             *changes_lines,
             '',
