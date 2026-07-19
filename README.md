@@ -137,8 +137,10 @@ training steps.
 
 The four marker boards in the simulation show real corrosion photos from
 the validation split of the data set. The detector did not train on these
-specific photos. The validation mAP50 score is 0.617 on real photos. This
-is a true, measured result.
+specific photos. On the held out test split, the shipped ONNX model
+reaches an mAP50 score of 0.621. At the production confidence threshold,
+precision is 0.966 and recall is 0.530. These are true, measured results
+from `scripts/eval_model.py` on real photos.
 
 Live detection inside the simulation has a known limitation. A neural
 network that trains on photographs does not reliably recognize the same

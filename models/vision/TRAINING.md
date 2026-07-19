@@ -72,6 +72,31 @@ The training run completed all 50 epochs. On the validation split, the
 model reached an mAP50 score of 0.617, a precision of 0.867, and a recall
 of 0.571. These numbers come from real photos, not from the simulation.
 
+## Evaluate the shipped model
+
+The script `scripts/eval_model.py` scores the exported ONNX model against
+the held out test split. The script uses the same preprocessing, inference,
+and postprocessing steps as the `defect_detector` node. Install
+`opencv-python-headless` in addition to the packages above, then run these
+commands from the repository root:
+
+```bash
+bash models/vision/download_model.sh
+curl -L "https://huggingface.co/api/datasets/Francesco/corrosion-bi3q3/parquet/default/test/0.parquet" -o test.parquet
+python3 scripts/eval_model.py --parquet test.parquet
+```
+
+Measured results on the test split (304 images, 1282 ground truth boxes):
+
+- mAP50: 0.621
+- At the production confidence threshold of 0.5: precision 0.966,
+  recall 0.530
+
+The test split played no part in training or in model selection. The test
+score matches the validation score, so the model did not overfit to the
+validation split, and the ONNX export gives the same quality as the
+training checkpoint.
+
 The detector does not reliably find defects inside the Gazebo
 simulation. This is a known limitation, not a training error. See
 [docs/benchmarks.md](../../docs/benchmarks.md) in the repository root for
