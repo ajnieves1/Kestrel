@@ -112,6 +112,40 @@
   </p>
 </section>
 
+<section id="model">
+  <h2>Detector model</h2>
+  <p>
+    The corrosion detector is a YOLOv8n model, trained on the public
+    <a href="https://huggingface.co/datasets/Francesco/corrosion-bi3q3">corrosion-bi3q3</a>
+    data set (CC BY 4.0) and deployed with ONNX Runtime. The script
+    <code>scripts/eval_model.py</code> scores the shipped model against the
+    held out test split through the same inference path that the flight
+    stack uses. The test split played no part in training or in model
+    selection.
+  </p>
+  <div class="panel" style="overflow-x: auto;">
+    <table>
+      <thead>
+        <tr><th>Measurement</th><th>Value</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Test images</td><td>304</td></tr>
+        <tr><td>Ground truth boxes</td><td>1282</td></tr>
+        <tr><td>mAP50</td><td>0.621</td></tr>
+        <tr><td>Precision at the production threshold (0.5)</td><td>0.966</td></tr>
+        <tr><td>Recall at the production threshold (0.5)</td><td>0.530</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>
+    The test score matches the validation score (0.617), so the model did
+    not overfit to the validation split, and the ONNX export gives the
+    same quality as the training checkpoint. See
+    <a href="https://github.com/ajnieves1/Kestrel/blob/main/models/vision/TRAINING.md">TRAINING.md</a>
+    for the training and evaluation steps.
+  </p>
+</section>
+
 <section id="talk-to-it">
   <h2>Talk to it</h2>
   <p>
