@@ -52,3 +52,8 @@ health_monitor:
     model_path: models/health/health_model.onnx
     scaler_path: models/health/health_scaler.json
     consecutive_alerts_required: 8
+
+obstacle_monitor:
+  ros__parameters:
+    hazard_distance_m: 4.0
+    consecutive_alerts_required: 3

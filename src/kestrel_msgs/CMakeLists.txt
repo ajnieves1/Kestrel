@@ -11,6 +11,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/GotoLocal.srv"
   "msg/DefectEvent.msg"
   "msg/HealthAlert.msg"
+  "msg/ObstacleHazard.msg"
   DEPENDENCIES std_msgs geometry_msgs
 )
 
