@@ -146,6 +146,40 @@
   </p>
 </section>
 
+<section id="intelligence">
+  <h2>Onboard intelligence</h2>
+  <p>
+    The copter runs several AI systems onboard. Every model exports to ONNX and
+    runs with ONNX Runtime on the CPU, the same target a small flight computer
+    uses. Every system is advisory. The safety guard node keeps final control.
+  </p>
+  <div class="panel" style="overflow-x: auto;">
+    <table>
+      <thead>
+        <tr><th>System</th><th>Model</th><th>Input</th><th>What it does</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Health monitor</td><td>PyTorch autoencoder</td><td>Propulsion telemetry</td><td>Warns of a developing motor fault before it fails</td></tr>
+        <tr><td>Obstacle perception</td><td>Point cloud analysis</td><td>Lidar</td><td>Warns on a close approach to structure, placed in the world frame</td></tr>
+        <tr><td>Depth navigation</td><td>MiDaS monocular depth</td><td>Camera</td><td>Recommends a safer heading when structure is close ahead</td></tr>
+        <tr><td>Corrosion detector</td><td>YOLOv8n</td><td>Camera</td><td>Finds defects on the structure</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>
+    The health monitor is a small autoencoder trained on normal flight
+    telemetry. It fires on a sustained anomaly, not on a single noisy reading,
+    and it fires on an injected motor fault. The model learns normal from data,
+    so it must be trained on telemetry from the same conditions it runs in. See
+    <a href="https://github.com/ajnieves1/Kestrel/blob/main/docs/health_benchmarks.md">the health benchmarks</a>.
+  </p>
+  <p>
+    The models are measured for the edge. INT8 quantization shrinks the detector
+    from 11.7 MB to 3.2 MB, and the mAP50 changes only from 0.621 to 0.613. See
+    <a href="https://github.com/ajnieves1/Kestrel/blob/main/docs/edge_benchmarks.md">the edge benchmarks</a>.
+  </p>
+</section>
+
 <section id="talk-to-it">
   <h2>Talk to it</h2>
   <p>

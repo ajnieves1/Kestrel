@@ -125,7 +125,6 @@ If you do not set an LLM API key, a full mission run writes a report with
 an appendix only. See an example report at
 [docs/sample_report.md](docs/sample_report.md).
 
-![Marker view](docs/marker_view.png)
 
 ## Model and data set
 
@@ -146,7 +145,7 @@ Live detection inside the simulation has a known limitation. A neural
 network that trains on photographs does not reliably recognize the same
 photograph when the simulation renders it as a flat texture under
 simulated light. This is a real gap between simulated data and real data.
-It is not a false result. See [docs/benchmarks.md](docs/benchmarks.md).
+See [docs/benchmarks.md](docs/benchmarks.md).
 
 OpenCV ArUco detection is also available. Set the parameter
 `detector_backend` to `aruco` to use it. The marker boards now show
@@ -154,6 +153,30 @@ corrosion photos instead of ArUco patterns. For this reason, the ArUco
 detector also finds no markers in the current simulation. Earlier versions
 of this project proved the ArUco detector reliable against ArUco marker
 boards.
+
+## Onboard intelligence
+
+The copter runs several AI systems onboard. Every model exports to ONNX and
+runs with ONNX Runtime on the CPU. Every system is advisory. The safety guard
+node keeps final control.
+
+| System | Model | Input | What it does |
+|---|---|---|---|
+| Health monitor | PyTorch autoencoder | Propulsion telemetry | Warns of a developing motor fault before it fails |
+| Obstacle perception | Point cloud analysis | Lidar | Warns on a close approach to structure, placed in the world frame |
+| Depth navigation | MiDaS monocular depth | Camera | Recommends a safer heading when structure is close ahead |
+| Corrosion detector | YOLOv8n | Camera | Finds defects on the structure |
+
+The health monitor is a small autoencoder trained on normal flight telemetry.
+It fires on a sustained anomaly, not on a single noisy reading, and it fires on
+an injected motor fault. The model learns normal from data, so it must be
+trained on telemetry from the same conditions it runs in. See
+[docs/health_benchmarks.md](docs/health_benchmarks.md) for the operating point
+and sensitivity numbers.
+
+Every model is measured for the edge. INT8 quantization shrinks the detector
+from 11.7 MB to 3.2 MB, and the mAP50 changes only from 0.621 to 0.613. See
+[docs/edge_benchmarks.md](docs/edge_benchmarks.md).
 
 ## Stack
 
