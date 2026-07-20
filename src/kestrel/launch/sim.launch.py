@@ -58,7 +58,17 @@ def launch_setup(context, *args, **kwargs):
         ],
         output='screen')
 
-    return [gazebo_headless, gazebo_gui, sitl_process, mavros_node, camera_bridge]
+    # Bridge the Gazebo lidar point cloud into ROS
+    lidar_bridge = Node(
+        package='ros_gz_bridge',
+        executable='parameter_bridge',
+        arguments=[
+            '/lidar/points@sensor_msgs/msg/PointCloud2@gz.msgs.PointCloudPacked',
+        ],
+        output='screen')
+
+    return [gazebo_headless, gazebo_gui, sitl_process, mavros_node,
+            camera_bridge, lidar_bridge]
 
 
 # Build the launch description with Gazebo, SITL, MAVROS, and the camera bridge
