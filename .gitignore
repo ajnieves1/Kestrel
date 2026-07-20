@@ -7,5 +7,6 @@ build/
 install/
 log/
 reports/
+telemetry_logs/
 models/vision/*.onnx
 .vscode/

@@ -10,6 +10,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/Takeoff.srv"
   "srv/GotoLocal.srv"
   "msg/DefectEvent.msg"
+  "msg/HealthAlert.msg"
   DEPENDENCIES std_msgs geometry_msgs
 )
 
