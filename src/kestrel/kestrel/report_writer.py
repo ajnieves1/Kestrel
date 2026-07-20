@@ -11,7 +11,7 @@ import openai
 import rclpy
 from google import genai
 from google.genai import types
-from kestrel_msgs.msg import DefectEvent
+from kestrel_msgs.msg import DefectEvent, HealthAlert
 from rclpy.node import Node
 from rclpy.qos import qos_profile_sensor_data
 from std_msgs.msg import String
@@ -53,11 +53,15 @@ class ReportWriter(Node):
         self.site_name = self.get_parameter('site_name').value
 
         self.defect_events = []
+        self.health_alerts = []
         self.takeoff_time = None
         self.landed_reported = False
 
         self.create_subscription(
             DefectEvent, '/kestrel/defect_events', self.on_defect_event,
+            qos_profile_sensor_data)
+        self.create_subscription(
+            HealthAlert, '/kestrel/health_alerts', self.on_health_alert,
             qos_profile_sensor_data)
         self.create_subscription(
             String, '/kestrel/mission_state', self.on_mission_state,
@@ -66,6 +70,10 @@ class ReportWriter(Node):
     # Store each defect event
     def on_defect_event(self, defect_event_message):
         self.defect_events.append(defect_event_message)
+
+    # Store each health alert
+    def on_health_alert(self, health_alert_message):
+        self.health_alerts.append(health_alert_message)
 
     # Track mission timing and trigger the report on landing
     def on_mission_state(self, state_message):
@@ -321,6 +329,24 @@ class ReportWriter(Node):
                     f"{previous_defect['east']:.2f} | "
                     f"{previous_defect['altitude']:.2f} |")
 
+        if self.health_alerts:
+            health_lines = [
+                '## Health',
+                '',
+                '| Component | Score | Threshold | Message |',
+                '|---|---|---|---|',
+            ]
+            for alert in self.health_alerts:
+                health_lines.append(
+                    f'| {alert.component} | {alert.anomaly_score:.3f} | '
+                    f'{alert.threshold:.3f} | {alert.message} |')
+        else:
+            health_lines = [
+                '## Health',
+                '',
+                'No health anomaly was detected during this mission.',
+            ]
+
         report_lines = [
             f'# Inspection report, {time.strftime("%Y-%m-%d")}',
             '',
@@ -337,6 +363,8 @@ class ReportWriter(Node):
                 'The system found no API key, or the request failed.'),
             '',
             *changes_lines,
+            '',
+            *health_lines,
             '',
             '## Appendix, raw detections',
             '',
