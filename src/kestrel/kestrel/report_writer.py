@@ -11,7 +11,8 @@ import openai
 import rclpy
 from google import genai
 from google.genai import types
-from kestrel_msgs.msg import DefectEvent, HealthAlert, ObstacleHazard
+from kestrel_msgs.msg import (
+    DefectEvent, HealthAlert, NavigationAdvisory, ObstacleHazard)
 from rclpy.node import Node
 from rclpy.qos import qos_profile_sensor_data
 from std_msgs.msg import String
@@ -55,6 +56,7 @@ class ReportWriter(Node):
         self.defect_events = []
         self.health_alerts = []
         self.obstacle_hazards = []
+        self.nav_advisories = []
         self.takeoff_time = None
         self.landed_reported = False
 
@@ -66,6 +68,9 @@ class ReportWriter(Node):
             qos_profile_sensor_data)
         self.create_subscription(
             ObstacleHazard, '/kestrel/obstacle_hazards', self.on_obstacle_hazard,
+            qos_profile_sensor_data)
+        self.create_subscription(
+            NavigationAdvisory, '/kestrel/nav_advisories', self.on_nav_advisory,
             qos_profile_sensor_data)
         self.create_subscription(
             String, '/kestrel/mission_state', self.on_mission_state,
@@ -82,6 +87,10 @@ class ReportWriter(Node):
     # Store each obstacle hazard
     def on_obstacle_hazard(self, obstacle_hazard_message):
         self.obstacle_hazards.append(obstacle_hazard_message)
+
+    # Store each navigation advisory
+    def on_nav_advisory(self, nav_advisory_message):
+        self.nav_advisories.append(nav_advisory_message)
 
     # Track mission timing and trigger the report on landing
     def on_mission_state(self, state_message):
@@ -375,6 +384,25 @@ class ReportWriter(Node):
                 'No obstacle proximity hazard was detected during this mission.',
             ]
 
+        if self.nav_advisories:
+            nav_lines = [
+                '## Navigation',
+                '',
+                '| Recommended heading | Center | Clearest | Message |',
+                '|---|---|---|---|',
+            ]
+            for advisory in self.nav_advisories:
+                nav_lines.append(
+                    f'| {advisory.recommended_heading} | '
+                    f'{advisory.center_proximity:.1f} | '
+                    f'{advisory.clearest_proximity:.1f} | {advisory.message} |')
+        else:
+            nav_lines = [
+                '## Navigation',
+                '',
+                'No navigation advisory was raised during this mission.',
+            ]
+
         report_lines = [
             f'# Inspection report, {time.strftime("%Y-%m-%d")}',
             '',
@@ -395,6 +423,8 @@ class ReportWriter(Node):
             *health_lines,
             '',
             *obstacle_lines,
+            '',
+            *nav_lines,
             '',
             '## Appendix, raw detections',
             '',
