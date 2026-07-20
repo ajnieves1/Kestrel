@@ -1,6 +1,7 @@
 services:
   # GUI capable dev shell, needs xhost +local: on the host once per boot
   dev:
+    devices: ["/dev/dri:/dev/dri"]
     build:
       context: ..
       dockerfile: docker/Dockerfile
