@@ -57,3 +57,10 @@ obstacle_monitor:
   ros__parameters:
     hazard_distance_m: 4.0
     consecutive_alerts_required: 3
+
+depth_navigator:
+  ros__parameters:
+    model_path: models/depth/midas_small.onnx
+    inference_rate_hz: 2.0
+    hazard_ratio: 1.3
+    consecutive_alerts_required: 2

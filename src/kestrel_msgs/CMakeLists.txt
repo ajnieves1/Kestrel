@@ -12,6 +12,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/DefectEvent.msg"
   "msg/HealthAlert.msg"
   "msg/ObstacleHazard.msg"
+  "msg/NavigationAdvisory.msg"
   DEPENDENCIES std_msgs geometry_msgs
 )
 

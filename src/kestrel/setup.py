@@ -50,6 +50,7 @@ setup(
             'report_writer = kestrel.report_writer:main',
             'health_monitor = kestrel.health_monitor:main',
             'obstacle_monitor = kestrel.obstacle_monitor:main',
+            'depth_navigator = kestrel.depth_navigator:main',
             'mcp_server = kestrel.mcp_server:main',
         ],
     },
