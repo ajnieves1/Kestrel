@@ -44,11 +44,14 @@ def launch_setup(context, *args, **kwargs):
     report_writer_node = Node(
         package='kestrel', executable='report_writer',
         parameters=node_params, output='screen')
+    health_monitor_node = Node(
+        package='kestrel', executable='health_monitor',
+        parameters=node_params, output='screen')
 
     return [
         sim_launch, telemetry_monitor_node, flight_commander_node,
         safety_guard_node, defect_detector_node, mission_director_node,
-        report_writer_node]
+        report_writer_node, health_monitor_node]
 
 
 # Build the launch description for a full autonomous inspection mission

@@ -46,3 +46,9 @@ report_writer:
     llm_provider: claude
     llm_model: ""
     site_name: pylon
+
+health_monitor:
+  ros__parameters:
+    model_path: models/health/health_model.onnx
+    scaler_path: models/health/health_scaler.json
+    consecutive_alerts_required: 8
