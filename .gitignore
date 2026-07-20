@@ -8,5 +8,6 @@ install/
 log/
 reports/
 telemetry_logs/
+test.parquet
 models/vision/*.onnx
 .vscode/
