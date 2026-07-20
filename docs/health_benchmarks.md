@@ -28,7 +28,7 @@ Fire time in seconds, or a dash when silent, per `consecutive_alerts_required`.
 
 ROC AUC of fault windows against nominal windows: 0.153.
 
-The AUC is below 0.5, and that is the key evidence for the design, not a defect. After the early degraded burst the fault flight bails to a low motion return, and those calm windows reconstruct better than the busy nominal survey, so per window the fault ranks as more normal than nominal. Per window classification is the wrong frame. The detector instead fires on the presence of a sustained over threshold burst, which the operating point and sensitivity tables separate cleanly.
+The AUC is below 0.5, and that is the key evidence for the design. After the early degraded burst the fault flight bails to a low motion return, and those calm windows reconstruct better than the busy nominal survey, so per window the fault ranks as more normal than nominal. Per window classification is the wrong frame. The detector instead fires on the presence of a sustained over threshold burst, which the operating point and sensitivity tables separate cleanly.
 
-These numbers come from two nominal logs and one fault log, so they are illustrative of the method, not a statistical claim.
+These numbers come from two nominal logs and one fault log, so they are illustrative of the method.
 
