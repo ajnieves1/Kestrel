@@ -11,7 +11,7 @@ import openai
 import rclpy
 from google import genai
 from google.genai import types
-from kestrel_msgs.msg import DefectEvent, HealthAlert
+from kestrel_msgs.msg import DefectEvent, HealthAlert, ObstacleHazard
 from rclpy.node import Node
 from rclpy.qos import qos_profile_sensor_data
 from std_msgs.msg import String
@@ -54,6 +54,7 @@ class ReportWriter(Node):
 
         self.defect_events = []
         self.health_alerts = []
+        self.obstacle_hazards = []
         self.takeoff_time = None
         self.landed_reported = False
 
@@ -62,6 +63,9 @@ class ReportWriter(Node):
             qos_profile_sensor_data)
         self.create_subscription(
             HealthAlert, '/kestrel/health_alerts', self.on_health_alert,
+            qos_profile_sensor_data)
+        self.create_subscription(
+            ObstacleHazard, '/kestrel/obstacle_hazards', self.on_obstacle_hazard,
             qos_profile_sensor_data)
         self.create_subscription(
             String, '/kestrel/mission_state', self.on_mission_state,
@@ -74,6 +78,10 @@ class ReportWriter(Node):
     # Store each health alert
     def on_health_alert(self, health_alert_message):
         self.health_alerts.append(health_alert_message)
+
+    # Store each obstacle hazard
+    def on_obstacle_hazard(self, obstacle_hazard_message):
+        self.obstacle_hazards.append(obstacle_hazard_message)
 
     # Track mission timing and trigger the report on landing
     def on_mission_state(self, state_message):
@@ -347,6 +355,26 @@ class ReportWriter(Node):
                 'No health anomaly was detected during this mission.',
             ]
 
+        if self.obstacle_hazards:
+            obstacle_lines = [
+                '## Obstacles',
+                '',
+                '| Distance m | Bearing deg | North | East | Altitude | Message |',
+                '|---|---|---|---|---|---|',
+            ]
+            for hazard in self.obstacle_hazards:
+                position = hazard.world_position
+                obstacle_lines.append(
+                    f'| {hazard.min_distance:.1f} | {hazard.bearing_deg:.0f} | '
+                    f'{position.x:.2f} | {position.y:.2f} | {position.z:.2f} | '
+                    f'{hazard.message} |')
+        else:
+            obstacle_lines = [
+                '## Obstacles',
+                '',
+                'No obstacle proximity hazard was detected during this mission.',
+            ]
+
         report_lines = [
             f'# Inspection report, {time.strftime("%Y-%m-%d")}',
             '',
@@ -365,6 +393,8 @@ class ReportWriter(Node):
             *changes_lines,
             '',
             *health_lines,
+            '',
+            *obstacle_lines,
             '',
             '## Appendix, raw detections',
             '',
