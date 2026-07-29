@@ -13,40 +13,38 @@ from rclpy.qos import qos_profile_sensor_data
 from sensor_msgs.msg import BatteryState, Imu
 
 # The four features the recorder captures, in a fixed order
-FEATURE_COLUMNS = ["voltage", "current", "ang_vel_mag", "lin_acc_mag"]
+FEATURE_COLUMNS = ['voltage', 'current', 'ang_vel_mag', 'lin_acc_mag']
 
 
 # Watch propulsion telemetry and raise a health alert on a sustained anomaly
 class HealthMonitor(Node):
     # Load the model and scaler, subscribe telemetry, set up the alert publisher
     def __init__(self):
-        super().__init__("health_monitor")
+        super().__init__('health_monitor')
 
-        self.declare_parameter("model_path", "models/health/health_model.onnx")
-        self.declare_parameter("scaler_path", "models/health/health_scaler.json")
-        self.declare_parameter("consecutive_alerts_required", 8)
+        self.declare_parameter('model_path', 'models/health/health_model.onnx')
+        self.declare_parameter('scaler_path', 'models/health/health_scaler.json')
+        self.declare_parameter('consecutive_alerts_required', 8)
 
-        self.model_path = self.get_parameter("model_path").value
-        self.scaler_path = self.get_parameter("scaler_path").value
+        self.model_path = self.get_parameter('model_path').value
+        self.scaler_path = self.get_parameter('scaler_path').value
         self.consecutive_alerts_required = self.get_parameter(
-            "consecutive_alerts_required"
-        ).value
+            'consecutive_alerts_required').value
 
         # Window size, scaling, and threshold come from the trained model, so the
         # node can never disagree with what the model was trained on
         with open(self.scaler_path) as scaler_file:
             scaler = json.load(scaler_file)
-        self.feature_names = scaler["feature_names"]
-        self.means = np.array(scaler["means"], dtype=np.float32)
-        self.stds = np.array(scaler["stds"], dtype=np.float32)
-        self.window_size = scaler["window_size"]
-        self.sample_rate_hz = scaler["sample_rate_hz"]
-        self.threshold = scaler["threshold"]
+        self.feature_names = scaler['feature_names']
+        self.means = np.array(scaler['means'], dtype=np.float32)
+        self.stds = np.array(scaler['stds'], dtype=np.float32)
+        self.window_size = scaler['window_size']
+        self.sample_rate_hz = scaler['sample_rate_hz']
+        self.threshold = scaler['threshold']
         self.active_index = [FEATURE_COLUMNS.index(name) for name in self.feature_names]
 
         self.onnx_session = onnxruntime.InferenceSession(
-            self.model_path, providers=["CPUExecutionProvider"]
-        )
+            self.model_path, providers=['CPUExecutionProvider'])
         self.input_name = self.onnx_session.get_inputs()[0].name
 
         self.window = collections.deque(maxlen=self.window_size)
@@ -58,18 +56,14 @@ class HealthMonitor(Node):
         self.state_message = None
 
         self.create_subscription(
-            BatteryState, "/mavros/battery", self.on_battery, qos_profile_sensor_data
-        )
+            BatteryState, '/mavros/battery', self.on_battery, qos_profile_sensor_data)
         self.create_subscription(
-            Imu, "/mavros/imu/data", self.on_imu, qos_profile_sensor_data
-        )
+            Imu, '/mavros/imu/data', self.on_imu, qos_profile_sensor_data)
         self.create_subscription(
-            State, "/mavros/state", self.on_state, qos_profile_sensor_data
-        )
+            State, '/mavros/state', self.on_state, qos_profile_sensor_data)
 
         self.alert_publisher = self.create_publisher(
-            HealthAlert, "/kestrel/health_alerts", 10
-        )
+            HealthAlert, '/kestrel/health_alerts', 10)
 
         self.create_timer(1.0 / self.sample_rate_hz, self.check_health)
 
@@ -92,8 +86,8 @@ class HealthMonitor(Node):
         full = [
             self.battery_message.voltage,
             self.battery_message.current,
-            math.sqrt(angular.x**2 + angular.y**2 + angular.z**2),
-            math.sqrt(linear.x**2 + linear.y**2 + linear.z**2),
+            math.sqrt(angular.x ** 2 + angular.y ** 2 + angular.z ** 2),
+            math.sqrt(linear.x ** 2 + linear.y ** 2 + linear.z ** 2),
         ]
         return np.array([full[i] for i in self.active_index], dtype=np.float32)
 
@@ -115,7 +109,8 @@ class HealthMonitor(Node):
 
         standardized = (np.array(self.window) - self.means) / self.stds
         model_input = standardized.flatten().astype(np.float32)[None, :]
-        reconstruction = self.onnx_session.run(None, {self.input_name: model_input})[0]
+        reconstruction = self.onnx_session.run(
+            None, {self.input_name: model_input})[0]
         error = float(((reconstruction - model_input) ** 2).mean())
 
         if error > self.threshold:
@@ -131,18 +126,16 @@ class HealthMonitor(Node):
         self.alerted = True
         alert = HealthAlert()
         alert.header.stamp = self.get_clock().now().to_msg()
-        alert.component = "propulsion"
+        alert.component = 'propulsion'
         alert.anomaly_score = float(error)
         alert.threshold = float(self.threshold)
         alert.message = (
-            "sustained propulsion anomaly, possible motor degradation, "
-            "recommend inspection"
-        )
+            'sustained propulsion anomaly, possible motor degradation, '
+            'recommend inspection')
         self.alert_publisher.publish(alert)
         self.get_logger().warn(
-            f"health alert: propulsion anomaly score {error:.3f} over "
-            f"threshold {self.threshold:.3f}"
-        )
+            f'health alert: propulsion anomaly score {error:.3f} over '
+            f'threshold {self.threshold:.3f}')
 
 
 # Start the node and spin
@@ -154,5 +147,5 @@ def main():
     rclpy.shutdown()
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

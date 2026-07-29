@@ -15,9 +15,7 @@ class Waypoint(NamedTuple):
 
 
 # Build a vertical helix of waypoints around a structure for survey flight
-def build_survey_path(
-    center_north, center_east, structure_height, orbit_radius, climb_step
-):
+def build_survey_path(center_north, center_east, structure_height, orbit_radius, climb_step):
     start_altitude = max(MINIMUM_ALTITUDE, climb_step)
     altitude_step = climb_step / WAYPOINTS_PER_REVOLUTION
 

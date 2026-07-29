@@ -11,23 +11,18 @@ from sensor_msgs.msg import BatteryState
 class TelemetryMonitor(Node):
     # Subscribe to mavros state, battery, and local position
     def __init__(self):
-        super().__init__("telemetry_monitor")
+        super().__init__('telemetry_monitor')
         self.state_message = None
         self.battery_message = None
         self.pose_message = None
 
         self.create_subscription(
-            State, "/mavros/state", self.on_state, qos_profile_sensor_data
-        )
+            State, '/mavros/state', self.on_state, qos_profile_sensor_data)
         self.create_subscription(
-            BatteryState, "/mavros/battery", self.on_battery, qos_profile_sensor_data
-        )
+            BatteryState, '/mavros/battery', self.on_battery, qos_profile_sensor_data)
         self.create_subscription(
-            PoseStamped,
-            "/mavros/local_position/pose",
-            self.on_pose,
-            qos_profile_sensor_data,
-        )
+            PoseStamped, '/mavros/local_position/pose', self.on_pose,
+            qos_profile_sensor_data)
 
         self.create_timer(1.0, self.log_summary)
 
@@ -45,22 +40,19 @@ class TelemetryMonitor(Node):
 
     # Log mode, armed flag, battery percent, and altitude
     def log_summary(self):
-        mode = self.state_message.mode if self.state_message is not None else "unknown"
-        armed = (
-            self.state_message.armed if self.state_message is not None else "unknown"
-        )
+        mode = self.state_message.mode if self.state_message is not None else 'unknown'
+        armed = self.state_message.armed if self.state_message is not None else 'unknown'
         if self.battery_message is not None:
-            battery_percent = f"{round(self.battery_message.percentage * 100)}%"
+            battery_percent = f'{round(self.battery_message.percentage * 100)}%'
         else:
-            battery_percent = "unknown"
+            battery_percent = 'unknown'
         if self.pose_message is not None:
-            altitude = f"{self.pose_message.pose.position.z:.2f}m"
+            altitude = f'{self.pose_message.pose.position.z:.2f}m'
         else:
-            altitude = "unknown"
+            altitude = 'unknown'
 
         self.get_logger().info(
-            f"mode={mode} armed={armed} battery={battery_percent} altitude={altitude}"
-        )
+            f'mode={mode} armed={armed} battery={battery_percent} altitude={altitude}')
 
 
 # Start the node and spin
@@ -72,5 +64,5 @@ def main():
     rclpy.shutdown()
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
