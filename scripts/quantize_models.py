@@ -115,7 +115,7 @@ def detector_map_rows():
         sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
         import pandas
         from eval_model import average_precision, evaluate
-    except Exception:
+    except (ImportError, ModuleNotFoundError):
         return []
 
     dataframe = pandas.read_parquet(TEST_PARQUET)

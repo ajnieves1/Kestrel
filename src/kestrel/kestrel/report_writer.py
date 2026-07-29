@@ -143,8 +143,8 @@ class ReportWriter(Node):
             if self.llm_provider == "openai":
                 return self.request_findings_openai(prompt_parts, model_name)
             return self.request_findings_gemini(prompt_parts, model_name)
-        except Exception as request_error:
-            self.get_logger().warn(f"llm request failed: {request_error}")
+        except (OSError, ValueError, RuntimeError) as request_error:
+            self.get_logger().warning(f"llm request failed: {request_error}")
             return None
 
     # Build the intro text and the per defect text plus photo path pairs
