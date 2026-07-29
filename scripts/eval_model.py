@@ -17,8 +17,9 @@ YOLO_NMS_IOU_THRESHOLD = 0.45
 MATCH_IOU_THRESHOLD = 0.5
 
 TEST_PARQUET_URL = (
-    'https://huggingface.co/api/datasets/Francesco/corrosion-bi3q3'
-    '/parquet/default/test/0.parquet')
+    "https://huggingface.co/api/datasets/Francesco/corrosion-bi3q3"
+    "/parquet/default/test/0.parquet"
+)
 
 
 # Resize and pad a frame to a square YOLO input, keeping the aspect ratio
@@ -33,8 +34,14 @@ def letterbox_image(cv_image):
     pad_right = YOLO_INPUT_SIZE - new_width - pad_left
     pad_bottom = YOLO_INPUT_SIZE - new_height - pad_top
     padded = cv2.copyMakeBorder(
-        resized, pad_top, pad_bottom, pad_left, pad_right,
-        cv2.BORDER_CONSTANT, value=(114, 114, 114))
+        resized,
+        pad_top,
+        pad_bottom,
+        pad_left,
+        pad_right,
+        cv2.BORDER_CONSTANT,
+        value=(114, 114, 114),
+    )
 
     return padded, scale, pad_left, pad_top
 
@@ -56,16 +63,22 @@ def run_yolo(session, input_name, cv_image, confidence_threshold):
         if confidence < confidence_threshold:
             continue
         center_x, center_y, width, height = prediction[:4]
-        boxes.append([
-            float(center_x - width / 2), float(center_y - height / 2),
-            float(width), float(height)])
+        boxes.append(
+            [
+                float(center_x - width / 2),
+                float(center_y - height / 2),
+                float(width),
+                float(height),
+            ]
+        )
         scores.append(confidence)
 
     if not boxes:
         return []
 
     kept_indices = cv2.dnn.NMSBoxes(
-        boxes, scores, confidence_threshold, YOLO_NMS_IOU_THRESHOLD)
+        boxes, scores, confidence_threshold, YOLO_NMS_IOU_THRESHOLD
+    )
 
     results = []
     for index in np.array(kept_indices).flatten():
@@ -128,12 +141,13 @@ def evaluate(session, input_name, dataframe, confidence_threshold):
     total_ground_truth = 0
 
     for _, row in dataframe.iterrows():
-        pil_image = Image.open(io.BytesIO(row['image']['bytes'])).convert('RGB')
+        pil_image = Image.open(io.BytesIO(row["image"]["bytes"])).convert("RGB")
         cv_image = cv2.cvtColor(np.array(pil_image), cv2.COLOR_RGB2BGR)
 
         ground_truth = [
             (box[0], box[1], box[0] + box[2], box[1] + box[3])
-            for box in row['objects']['bbox']]
+            for box in row["objects"]["bbox"]
+        ]
         total_ground_truth += len(ground_truth)
 
         detections = run_yolo(session, input_name, cv_image, confidence_threshold)
@@ -161,25 +175,40 @@ def evaluate(session, input_name, dataframe, confidence_threshold):
 # Parse arguments, run the evaluation, and print the metrics
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--model', default='models/vision/defect.onnx')
-    parser.add_argument('--parquet', default='test.parquet',
-                        help=f'Test split parquet, download from {TEST_PARQUET_URL}')
-    parser.add_argument('--eval-confidence', type=float, default=0.001,
-                        help='Low threshold so the full precision recall curve exists')
-    parser.add_argument('--report-confidence', type=float, default=0.5,
-                        help='Production threshold to report precision and recall at')
+    parser.add_argument("--model", default="models/vision/defect.onnx")
+    parser.add_argument(
+        "--parquet",
+        default="test.parquet",
+        help=f"Test split parquet, download from {TEST_PARQUET_URL}",
+    )
+    parser.add_argument(
+        "--eval-confidence",
+        type=float,
+        default=0.001,
+        help="Low threshold so the full precision recall curve exists",
+    )
+    parser.add_argument(
+        "--report-confidence",
+        type=float,
+        default=0.5,
+        help="Production threshold to report precision and recall at",
+    )
     arguments = parser.parse_args()
 
     if not os.path.isfile(arguments.model):
-        raise SystemExit(f'{arguments.model} missing, run models/vision/download_model.sh')
+        raise SystemExit(
+            f"{arguments.model} missing, run models/vision/download_model.sh"
+        )
 
     session = onnxruntime.InferenceSession(
-        arguments.model, providers=['CPUExecutionProvider'])
+        arguments.model, providers=["CPUExecutionProvider"]
+    )
     input_name = session.get_inputs()[0].name
     dataframe = pd.read_parquet(arguments.parquet)
 
     scored_detections, total_ground_truth = evaluate(
-        session, input_name, dataframe, arguments.eval_confidence)
+        session, input_name, dataframe, arguments.eval_confidence
+    )
 
     map50 = average_precision(list(scored_detections), total_ground_truth)
 
@@ -188,12 +217,14 @@ def main():
     precision = true_positives / len(kept) if kept else 0.0
     recall = true_positives / total_ground_truth if total_ground_truth else 0.0
 
-    print(f'images: {len(dataframe)}, ground truth boxes: {total_ground_truth}')
-    print(f'mAP50: {map50:.3f}')
-    print(f'at confidence {arguments.report_confidence}: '
-          f'precision {precision:.3f}, recall {recall:.3f} '
-          f'({true_positives}/{len(kept)} detections matched)')
+    print(f"images: {len(dataframe)}, ground truth boxes: {total_ground_truth}")
+    print(f"mAP50: {map50:.3f}")
+    print(
+        f"at confidence {arguments.report_confidence}: "
+        f"precision {precision:.3f}, recall {recall:.3f} "
+        f"({true_positives}/{len(kept)} detections matched)"
+    )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

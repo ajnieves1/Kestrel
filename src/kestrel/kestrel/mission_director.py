@@ -12,8 +12,12 @@ from rclpy.node import Node
 from std_msgs.msg import String
 from std_srvs.srv import Trigger
 
-from kestrel.inspection_planner import (MINIMUM_ALTITUDE, Waypoint,
-                                        build_orbit_path, build_survey_path)
+from kestrel.inspection_planner import (
+    MINIMUM_ALTITUDE,
+    Waypoint,
+    build_orbit_path,
+    build_survey_path,
+)
 
 # Total time to keep retrying takeoff while ArduCopter finishes prearm checks
 TAKEOFF_READY_DEADLINE_SECONDS = 120.0
@@ -27,51 +31,63 @@ SAFE_TRANSIT_CLEARANCE_METERS = 2.0
 class MissionDirector(Node):
     # Set up clients, subscriptions, state publisher, and the mission thread
     def __init__(self):
-        super().__init__('mission_director')
+        super().__init__("mission_director")
 
         # One reentrant group so the mission thread can wait on service calls
         self.callback_group = ReentrantCallbackGroup()
 
-        self.declare_parameter('structure_center_north', 15.0)
-        self.declare_parameter('structure_center_east', 0.0)
-        self.declare_parameter('structure_height', 22.0)
-        self.declare_parameter('survey_orbit_radius', 8.0)
-        self.declare_parameter('survey_climb_step', 5.0)
-        self.declare_parameter('investigate_orbit_radius', 4.0)
-        self.declare_parameter('investigate_waypoint_count', 8)
-        self.declare_parameter('return_altitude', 5.0)
-        self.declare_parameter('transit_altitude', 0.0)
-        self.declare_parameter('auto_start', True)
+        self.declare_parameter("structure_center_north", 15.0)
+        self.declare_parameter("structure_center_east", 0.0)
+        self.declare_parameter("structure_height", 22.0)
+        self.declare_parameter("survey_orbit_radius", 8.0)
+        self.declare_parameter("survey_climb_step", 5.0)
+        self.declare_parameter("investigate_orbit_radius", 4.0)
+        self.declare_parameter("investigate_waypoint_count", 8)
+        self.declare_parameter("return_altitude", 5.0)
+        self.declare_parameter("transit_altitude", 0.0)
+        self.declare_parameter("auto_start", True)
 
-        self.structure_center_north = self.get_parameter('structure_center_north').value
-        self.structure_center_east = self.get_parameter('structure_center_east').value
-        self.structure_height = self.get_parameter('structure_height').value
-        self.survey_orbit_radius = self.get_parameter('survey_orbit_radius').value
-        self.survey_climb_step = self.get_parameter('survey_climb_step').value
-        self.investigate_orbit_radius = self.get_parameter('investigate_orbit_radius').value
+        self.structure_center_north = self.get_parameter("structure_center_north").value
+        self.structure_center_east = self.get_parameter("structure_center_east").value
+        self.structure_height = self.get_parameter("structure_height").value
+        self.survey_orbit_radius = self.get_parameter("survey_orbit_radius").value
+        self.survey_climb_step = self.get_parameter("survey_climb_step").value
+        self.investigate_orbit_radius = self.get_parameter(
+            "investigate_orbit_radius"
+        ).value
         self.investigate_waypoint_count = self.get_parameter(
-            'investigate_waypoint_count').value
-        self.return_altitude = self.get_parameter('return_altitude').value
-        self.transit_altitude = self.get_parameter('transit_altitude').value
-        self.auto_start = self.get_parameter('auto_start').value
+            "investigate_waypoint_count"
+        ).value
+        self.return_altitude = self.get_parameter("return_altitude").value
+        self.transit_altitude = self.get_parameter("transit_altitude").value
+        self.auto_start = self.get_parameter("auto_start").value
 
-        self.state = 'IDLE'
+        self.state = "IDLE"
         self.defect_queue = collections.deque()
         self.waypoints_flown = 0
         self.defects_investigated = 0
         self.mission_start_time = None
 
-        self.state_publisher = self.create_publisher(String, '/kestrel/mission_state', 10)
+        self.state_publisher = self.create_publisher(
+            String, "/kestrel/mission_state", 10
+        )
         self.create_subscription(
-            DefectEvent, '/kestrel/defect_events', self.on_defect_event,
-            10, callback_group=self.callback_group)
+            DefectEvent,
+            "/kestrel/defect_events",
+            self.on_defect_event,
+            10,
+            callback_group=self.callback_group,
+        )
 
         self.takeoff_client = self.create_client(
-            Takeoff, '/kestrel/cmd/takeoff', callback_group=self.callback_group)
+            Takeoff, "/kestrel/cmd/takeoff", callback_group=self.callback_group
+        )
         self.goto_client = self.create_client(
-            GotoLocal, '/kestrel/cmd/goto', callback_group=self.callback_group)
+            GotoLocal, "/kestrel/cmd/goto", callback_group=self.callback_group
+        )
         self.land_client = self.create_client(
-            Trigger, '/kestrel/cmd/land', callback_group=self.callback_group)
+            Trigger, "/kestrel/cmd/land", callback_group=self.callback_group
+        )
 
         self.create_timer(1.0, self.publish_state)
 
@@ -100,9 +116,9 @@ class MissionDirector(Node):
 
         for client in (self.takeoff_client, self.goto_client, self.land_client):
             while not client.wait_for_service(timeout_sec=1.0):
-                self.get_logger().warn(f'waiting for service {client.srv_name}')
+                self.get_logger().warn(f"waiting for service {client.srv_name}")
 
-        self.set_state('TAKEOFF')
+        self.set_state("TAKEOFF")
         start_altitude = max(MINIMUM_ALTITUDE, self.survey_climb_step)
         takeoff_request = Takeoff.Request()
         takeoff_request.altitude = start_altitude
@@ -113,22 +129,31 @@ class MissionDirector(Node):
         takeoff_deadline = time.time() + TAKEOFF_READY_DEADLINE_SECONDS
         while time.time() < takeoff_deadline:
             takeoff_result = self.call_service_blocking(
-                self.takeoff_client, takeoff_request, 200.0)
+                self.takeoff_client, takeoff_request, 200.0
+            )
             if takeoff_result is not None and takeoff_result.success:
                 break
-            failure_message = takeoff_result.message if takeoff_result else 'no response'
-            self.get_logger().warn(f'takeoff attempt failed: {failure_message}, retrying')
+            failure_message = (
+                takeoff_result.message if takeoff_result else "no response"
+            )
+            self.get_logger().warn(
+                f"takeoff attempt failed: {failure_message}, retrying"
+            )
             time.sleep(TAKEOFF_RETRY_PAUSE_SECONDS)
 
         if takeoff_result is None or not takeoff_result.success:
-            self.get_logger().error('takeoff failed, returning')
+            self.get_logger().error("takeoff failed, returning")
             self.return_and_land()
             return
 
-        self.set_state('SURVEY')
+        self.set_state("SURVEY")
         survey_path = build_survey_path(
-            self.structure_center_north, self.structure_center_east,
-            self.structure_height, self.survey_orbit_radius, self.survey_climb_step)
+            self.structure_center_north,
+            self.structure_center_east,
+            self.structure_height,
+            self.survey_orbit_radius,
+            self.survey_climb_step,
+        )
 
         # A straight line from home to the first waypoint crosses the
         # structure, climb above it and approach from over the top instead.
@@ -136,15 +161,24 @@ class MissionDirector(Node):
         # blades reach higher), a site sets transit_altitude when it isn't
         first_waypoint = survey_path[0]
         safe_altitude = (
-            self.transit_altitude if self.transit_altitude > 0.0
-            else self.structure_height + SAFE_TRANSIT_CLEARANCE_METERS)
-        climb_waypoint = Waypoint(north=0.0, east=0.0, altitude=safe_altitude, yaw_deg=0.0)
+            self.transit_altitude
+            if self.transit_altitude > 0.0
+            else self.structure_height + SAFE_TRANSIT_CLEARANCE_METERS
+        )
+        climb_waypoint = Waypoint(
+            north=0.0, east=0.0, altitude=safe_altitude, yaw_deg=0.0
+        )
         approach_waypoint = Waypoint(
-            north=first_waypoint.north, east=first_waypoint.east,
-            altitude=safe_altitude, yaw_deg=first_waypoint.yaw_deg)
+            north=first_waypoint.north,
+            east=first_waypoint.east,
+            altitude=safe_altitude,
+            yaw_deg=first_waypoint.yaw_deg,
+        )
         for transit_waypoint in (climb_waypoint, approach_waypoint):
             if not self.fly_waypoint(transit_waypoint):
-                self.get_logger().error('goto failed during transit to survey, returning')
+                self.get_logger().error(
+                    "goto failed during transit to survey, returning"
+                )
                 self.return_and_land()
                 return
 
@@ -153,34 +187,38 @@ class MissionDirector(Node):
         index = 0
         while index < len(survey_path):
             if not self.fly_waypoint(survey_path[index]):
-                self.get_logger().error('goto failed during survey, returning')
+                self.get_logger().error("goto failed during survey, returning")
                 self.return_and_land()
                 return
             self.waypoints_flown += 1
             index += 1
 
             if self.defect_queue:
-                self.set_state('INVESTIGATE')
+                self.set_state("INVESTIGATE")
                 while self.defect_queue:
                     defect_event = self.defect_queue.popleft()
                     defect_point = Waypoint(
                         north=defect_event.world_position.x,
                         east=defect_event.world_position.y,
                         altitude=defect_event.world_position.z,
-                        yaw_deg=0.0)
+                        yaw_deg=0.0,
+                    )
                     orbit_path = build_orbit_path(
-                        defect_point, self.investigate_orbit_radius,
-                        self.investigate_waypoint_count)
+                        defect_point,
+                        self.investigate_orbit_radius,
+                        self.investigate_waypoint_count,
+                    )
                     for orbit_waypoint in orbit_path:
                         if not self.fly_waypoint(orbit_waypoint):
                             self.get_logger().error(
-                                'goto failed during investigate, returning')
+                                "goto failed during investigate, returning"
+                            )
                             self.return_and_land()
                             return
                         self.waypoints_flown += 1
                     self.defects_investigated += 1
-                self.set_state('RESUME')
-                self.set_state('SURVEY')
+                self.set_state("RESUME")
+                self.set_state("SURVEY")
 
         self.return_and_land()
 
@@ -196,27 +234,33 @@ class MissionDirector(Node):
 
     # Fly home, land, log the mission summary, and set the landed state
     def return_and_land(self):
-        self.set_state('RETURN')
-        home_waypoint = Waypoint(north=0.0, east=0.0,
-                                 altitude=self.return_altitude, yaw_deg=0.0)
+        self.set_state("RETURN")
+        home_waypoint = Waypoint(
+            north=0.0, east=0.0, altitude=self.return_altitude, yaw_deg=0.0
+        )
         if not self.fly_waypoint(home_waypoint):
-            self.get_logger().error('goto home failed, landing anyway')
+            self.get_logger().error("goto home failed, landing anyway")
 
-        land_result = self.call_service_blocking(self.land_client, Trigger.Request(), 70.0)
+        land_result = self.call_service_blocking(
+            self.land_client, Trigger.Request(), 70.0
+        )
         if land_result is None or not land_result.success:
-            self.get_logger().error('land failed')
+            self.get_logger().error("land failed")
 
-        self.set_state('LANDED')
+        self.set_state("LANDED")
         duration_seconds = time.time() - self.mission_start_time
         self.get_logger().info(
-            f'mission complete: waypoints flown={self.waypoints_flown} '
-            f'defects investigated={self.defects_investigated} '
-            f'duration={duration_seconds:.1f}s')
+            f"mission complete: waypoints flown={self.waypoints_flown} "
+            f"defects investigated={self.defects_investigated} "
+            f"duration={duration_seconds:.1f}s"
+        )
 
     # Call a kestrel service and wait for the reply with a deadline
     def call_service_blocking(self, client, request, timeout_seconds):
         while not client.wait_for_service(timeout_sec=1.0):
-            self.get_logger().warn(f'waiting for service {client.srv_name} to become available')
+            self.get_logger().warn(
+                f"waiting for service {client.srv_name} to become available"
+            )
 
         future = client.call_async(request)
 
@@ -227,7 +271,8 @@ class MissionDirector(Node):
             time.sleep(0.05)
 
         self.get_logger().error(
-            f'service {client.srv_name} did not respond within {timeout_seconds} s')
+            f"service {client.srv_name} did not respond within {timeout_seconds} s"
+        )
         return None
 
 
@@ -242,5 +287,5 @@ def main():
     rclpy.shutdown()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

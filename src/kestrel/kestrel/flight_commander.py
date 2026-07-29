@@ -10,8 +10,13 @@ from mavros_msgs.srv import CommandBool, CommandTOL, SetMode
 from rclpy.callback_groups import ReentrantCallbackGroup
 from rclpy.executors import MultiThreadedExecutor
 from rclpy.node import Node
-from rclpy.qos import (QoSDurabilityPolicy, QoSHistoryPolicy, QoSProfile,
-                       QoSReliabilityPolicy, qos_profile_sensor_data)
+from rclpy.qos import (
+    QoSDurabilityPolicy,
+    QoSHistoryPolicy,
+    QoSProfile,
+    QoSReliabilityPolicy,
+    qos_profile_sensor_data,
+)
 from std_srvs.srv import Trigger
 
 # Total time to keep retrying the arm command while ArduCopter's EKF settles
@@ -24,7 +29,7 @@ ARM_RETRY_PAUSE_SECONDS = 3.0
 class FlightCommander(Node):
     # Create service servers, MAVROS clients, subscriptions, and state
     def __init__(self):
-        super().__init__('flight_commander')
+        super().__init__("flight_commander")
 
         # One reentrant group so a service call can wait inside a callback
         self.callback_group = ReentrantCallbackGroup()
@@ -34,42 +39,69 @@ class FlightCommander(Node):
         self.home_received = False
 
         self.create_subscription(
-            State, '/mavros/state', self.on_state,
-            qos_profile_sensor_data, callback_group=self.callback_group)
+            State,
+            "/mavros/state",
+            self.on_state,
+            qos_profile_sensor_data,
+            callback_group=self.callback_group,
+        )
         self.create_subscription(
-            PoseStamped, '/mavros/local_position/pose', self.on_pose,
-            qos_profile_sensor_data, callback_group=self.callback_group)
+            PoseStamped,
+            "/mavros/local_position/pose",
+            self.on_pose,
+            qos_profile_sensor_data,
+            callback_group=self.callback_group,
+        )
         # Home position is latched transient local, match it or a late start misses it
         latched_qos = QoSProfile(
             depth=1,
             reliability=QoSReliabilityPolicy.RELIABLE,
             durability=QoSDurabilityPolicy.TRANSIENT_LOCAL,
-            history=QoSHistoryPolicy.KEEP_LAST)
+            history=QoSHistoryPolicy.KEEP_LAST,
+        )
         self.create_subscription(
-            HomePosition, '/mavros/home_position/home', self.on_home,
-            latched_qos, callback_group=self.callback_group)
+            HomePosition,
+            "/mavros/home_position/home",
+            self.on_home,
+            latched_qos,
+            callback_group=self.callback_group,
+        )
 
         self.set_mode_client = self.create_client(
-            SetMode, '/mavros/set_mode', callback_group=self.callback_group)
+            SetMode, "/mavros/set_mode", callback_group=self.callback_group
+        )
         self.arming_client = self.create_client(
-            CommandBool, '/mavros/cmd/arming', callback_group=self.callback_group)
+            CommandBool, "/mavros/cmd/arming", callback_group=self.callback_group
+        )
         self.takeoff_client = self.create_client(
-            CommandTOL, '/mavros/cmd/takeoff', callback_group=self.callback_group)
+            CommandTOL, "/mavros/cmd/takeoff", callback_group=self.callback_group
+        )
         self.land_client = self.create_client(
-            CommandTOL, '/mavros/cmd/land', callback_group=self.callback_group)
+            CommandTOL, "/mavros/cmd/land", callback_group=self.callback_group
+        )
 
         self.setpoint_publisher = self.create_publisher(
-            PoseStamped, '/mavros/setpoint_position/local', 10)
+            PoseStamped, "/mavros/setpoint_position/local", 10
+        )
 
         self.create_service(
-            Takeoff, '/kestrel/cmd/takeoff', self.handle_takeoff,
-            callback_group=self.callback_group)
+            Takeoff,
+            "/kestrel/cmd/takeoff",
+            self.handle_takeoff,
+            callback_group=self.callback_group,
+        )
         self.create_service(
-            GotoLocal, '/kestrel/cmd/goto', self.handle_goto,
-            callback_group=self.callback_group)
+            GotoLocal,
+            "/kestrel/cmd/goto",
+            self.handle_goto,
+            callback_group=self.callback_group,
+        )
         self.create_service(
-            Trigger, '/kestrel/cmd/land', self.handle_land,
-            callback_group=self.callback_group)
+            Trigger,
+            "/kestrel/cmd/land",
+            self.handle_land,
+            callback_group=self.callback_group,
+        )
 
     # Store the latest vehicle state message
     def on_state(self, state_message):
@@ -97,7 +129,7 @@ class FlightCommander(Node):
             time.sleep(0.1)
         if not connected:
             response.success = False
-            response.message = 'timed out waiting for FCU connection'
+            response.message = "timed out waiting for FCU connection"
             return response
 
         # Step 2: wait for the home position, this means the EKF has an origin
@@ -110,23 +142,23 @@ class FlightCommander(Node):
             time.sleep(0.1)
         if not home_ready:
             response.success = False
-            response.message = 'timed out waiting for home position'
+            response.message = "timed out waiting for home position"
             return response
 
         # Step 3: switch to GUIDED and confirm through the state topic
         mode_request = SetMode.Request()
-        mode_request.custom_mode = 'GUIDED'
+        mode_request.custom_mode = "GUIDED"
         self.call_service_blocking(self.set_mode_client, mode_request, 5.0)
         in_guided = False
         deadline = time.time() + 10.0
         while time.time() < deadline:
-            if self.state_message is not None and self.state_message.mode == 'GUIDED':
+            if self.state_message is not None and self.state_message.mode == "GUIDED":
                 in_guided = True
                 break
             time.sleep(0.1)
         if not in_guided:
             response.success = False
-            response.message = 'failed to enter GUIDED mode'
+            response.message = "failed to enter GUIDED mode"
             return response
 
         # Step 4: arm, ArduPilot rejects until its prearm checks pass.
@@ -137,24 +169,27 @@ class FlightCommander(Node):
         while time.time() < arm_deadline:
             arm_request = CommandBool.Request()
             arm_request.value = True
-            arm_result = self.call_service_blocking(self.arming_client, arm_request, 5.0)
+            arm_result = self.call_service_blocking(
+                self.arming_client, arm_request, 5.0
+            )
             if arm_result is not None and arm_result.success:
                 armed = True
                 break
             time.sleep(ARM_RETRY_PAUSE_SECONDS)
         if not armed:
             response.success = False
-            response.message = 'failed to arm within the retry window'
+            response.message = "failed to arm within the retry window"
             return response
 
         # Step 5: command the takeoff to the target altitude
         takeoff_request = CommandTOL.Request()
         takeoff_request.altitude = target_altitude
         takeoff_result = self.call_service_blocking(
-            self.takeoff_client, takeoff_request, 5.0)
+            self.takeoff_client, takeoff_request, 5.0
+        )
         if takeoff_result is None or not takeoff_result.success:
             response.success = False
-            response.message = 'takeoff command was rejected'
+            response.message = "takeoff command was rejected"
             return response
 
         # Step 6: wait until the altitude reaches the target
@@ -169,28 +204,32 @@ class FlightCommander(Node):
             time.sleep(0.1)
         if not reached:
             response.success = False
-            response.message = 'timed out climbing to the target altitude'
+            response.message = "timed out climbing to the target altitude"
             return response
 
         response.success = True
-        response.message = 'reached target altitude'
+        response.message = "reached target altitude"
         return response
 
     # Handle /kestrel/cmd/goto by streaming setpoints until arrival or timeout
     def handle_goto(self, request, response):
         # Refuse unless armed and in GUIDED, setpoints are ignored otherwise
-        if (self.state_message is None or not self.state_message.armed
-                or self.state_message.mode != 'GUIDED'):
+        if (
+            self.state_message is None
+            or not self.state_message.armed
+            or self.state_message.mode != "GUIDED"
+        ):
             response.success = False
-            response.message = 'vehicle is not armed and in GUIDED'
+            response.message = "vehicle is not armed and in GUIDED"
             return response
 
         target = self.build_enu_setpoint(
-            request.north, request.east, request.altitude, request.yaw_deg)
+            request.north, request.east, request.altitude, request.yaw_deg
+        )
 
         # Stream the setpoint at 10 Hz until the pose is within half a meter
         arrived = False
-        remaining = float('inf')
+        remaining = float("inf")
         deadline = time.time() + 60.0
         while time.time() < deadline:
             target.header.stamp = self.get_clock().now().to_msg()
@@ -200,7 +239,8 @@ class FlightCommander(Node):
                 remaining = math.sqrt(
                     (current.x - target.pose.position.x) ** 2
                     + (current.y - target.pose.position.y) ** 2
-                    + (current.z - target.pose.position.z) ** 2)
+                    + (current.z - target.pose.position.z) ** 2
+                )
                 if remaining < 0.5:
                     arrived = True
                     break
@@ -208,20 +248,21 @@ class FlightCommander(Node):
 
         if not arrived:
             response.success = False
-            response.message = f'timed out {remaining:.2f} m from the target'
+            response.message = f"timed out {remaining:.2f} m from the target"
             return response
 
         response.success = True
-        response.message = 'reached the target'
+        response.message = "reached the target"
         return response
 
     # Handle /kestrel/cmd/land by calling MAVROS land and waiting for disarm
     def handle_land(self, request, response):
         land_result = self.call_service_blocking(
-            self.land_client, CommandTOL.Request(), 5.0)
+            self.land_client, CommandTOL.Request(), 5.0
+        )
         if land_result is None or not land_result.success:
             response.success = False
-            response.message = 'land command was rejected'
+            response.message = "land command was rejected"
             return response
 
         # Landing finishes when ArduPilot disarms the motors on touchdown
@@ -234,11 +275,11 @@ class FlightCommander(Node):
             time.sleep(0.1)
         if not disarmed:
             response.success = False
-            response.message = 'timed out waiting for disarm after land'
+            response.message = "timed out waiting for disarm after land"
             return response
 
         response.success = True
-        response.message = 'landed and disarmed'
+        response.message = "landed and disarmed"
         return response
 
     # MAVROS local frame is ENU while our services speak north and east, convert here
@@ -260,7 +301,8 @@ class FlightCommander(Node):
         # Wait for the service to be available before calling it
         while not client.wait_for_service(timeout_sec=1.0):
             self.get_logger().warn(
-                f'waiting for service {client.srv_name} to become available')
+                f"waiting for service {client.srv_name} to become available"
+            )
 
         future = client.call_async(request)
 
@@ -272,7 +314,8 @@ class FlightCommander(Node):
             time.sleep(0.05)
 
         self.get_logger().error(
-            f'service {client.srv_name} did not respond within {timeout_seconds} s')
+            f"service {client.srv_name} did not respond within {timeout_seconds} s"
+        )
         return None
 
 
@@ -287,5 +330,5 @@ def main():
     rclpy.shutdown()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

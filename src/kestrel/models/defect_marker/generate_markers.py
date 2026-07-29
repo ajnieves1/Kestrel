@@ -19,11 +19,13 @@ def main():
         # generateImageMarker needs OpenCV 4.7, the image pins 4.6, drawMarker is the same call
         marker_image = cv2.aruco.drawMarker(dictionary, marker_id, MARKER_SIZE)
         canvas = np.full((IMAGE_SIZE, IMAGE_SIZE), 255, dtype=np.uint8)
-        canvas[MARGIN:MARGIN + MARKER_SIZE, MARGIN:MARGIN + MARKER_SIZE] = marker_image
-        output_path = os.path.join(output_directory, f'marker_{marker_id}.png')
+        canvas[MARGIN : MARGIN + MARKER_SIZE, MARGIN : MARGIN + MARKER_SIZE] = (
+            marker_image
+        )
+        output_path = os.path.join(output_directory, f"marker_{marker_id}.png")
         cv2.imwrite(output_path, canvas)
-        print(f'wrote {output_path}')
+        print(f"wrote {output_path}")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

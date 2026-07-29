@@ -15,12 +15,12 @@ from std_srvs.srv import Trigger
 class SafetyGuard(Node):
     # Subscribe to pose, battery, and state, offer the abort service
     def __init__(self):
-        super().__init__('safety_guard')
+        super().__init__("safety_guard")
 
-        self.declare_parameter('geofence_radius_m', 100.0)
-        self.declare_parameter('battery_floor_percent', 25.0)
-        self.geofence_radius_m = self.get_parameter('geofence_radius_m').value
-        self.battery_floor_percent = self.get_parameter('battery_floor_percent').value
+        self.declare_parameter("geofence_radius_m", 100.0)
+        self.declare_parameter("battery_floor_percent", 25.0)
+        self.geofence_radius_m = self.get_parameter("geofence_radius_m").value
+        self.battery_floor_percent = self.get_parameter("battery_floor_percent").value
 
         self.state_message = None
         self.pose_message = None
@@ -28,16 +28,21 @@ class SafetyGuard(Node):
         self.rtl_latched = False
 
         self.create_subscription(
-            State, '/mavros/state', self.on_state, qos_profile_sensor_data)
+            State, "/mavros/state", self.on_state, qos_profile_sensor_data
+        )
         self.create_subscription(
-            PoseStamped, '/mavros/local_position/pose', self.on_pose,
-            qos_profile_sensor_data)
+            PoseStamped,
+            "/mavros/local_position/pose",
+            self.on_pose,
+            qos_profile_sensor_data,
+        )
         self.create_subscription(
-            BatteryState, '/mavros/battery', self.on_battery, qos_profile_sensor_data)
+            BatteryState, "/mavros/battery", self.on_battery, qos_profile_sensor_data
+        )
 
-        self.set_mode_client = self.create_client(SetMode, '/mavros/set_mode')
+        self.set_mode_client = self.create_client(SetMode, "/mavros/set_mode")
 
-        self.create_service(Trigger, '/kestrel/abort', self.handle_abort)
+        self.create_service(Trigger, "/kestrel/abort", self.handle_abort)
 
         self.create_timer(1.0, self.check_limits)
 
@@ -55,9 +60,9 @@ class SafetyGuard(Node):
 
     # Handle /kestrel/abort by forcing RTL
     def handle_abort(self, request, response):
-        self.trigger_rtl('abort service')
+        self.trigger_rtl("abort service")
         response.success = True
-        response.message = 'return to launch commanded'
+        response.message = "return to launch commanded"
         return response
 
     # Check fence and battery once per second and trigger RTL on breach
@@ -67,8 +72,8 @@ class SafetyGuard(Node):
 
         # Once latched, keep commanding RTL until the FCU confirms the mode
         if self.rtl_latched:
-            if self.state_message.mode != 'RTL':
-                self.trigger_rtl('reasserting return to launch')
+            if self.state_message.mode != "RTL":
+                self.trigger_rtl("reasserting return to launch")
             return
 
         # An idle vehicle on the pad must not trigger the guard
@@ -79,24 +84,24 @@ class SafetyGuard(Node):
             x = self.pose_message.pose.position.x
             y = self.pose_message.pose.position.y
             if math.sqrt(x * x + y * y) > self.geofence_radius_m:
-                self.trigger_rtl('geofence breach')
+                self.trigger_rtl("geofence breach")
                 return
 
         if self.battery_message is not None:
             if self.battery_message.percentage * 100 < self.battery_floor_percent:
-                self.trigger_rtl('low battery')
+                self.trigger_rtl("low battery")
                 return
 
     # Set mode RTL through MAVROS and latch so we never fight the return
     def trigger_rtl(self, reason):
         # Log and latch on the first trip so the limit checks stop
         if not self.rtl_latched:
-            self.get_logger().error(f'safety guard forcing RTL, reason: {reason}')
+            self.get_logger().error(f"safety guard forcing RTL, reason: {reason}")
             self.rtl_latched = True
 
         # Command RTL, the timer calls this again until the FCU confirms it
         mode_request = SetMode.Request()
-        mode_request.custom_mode = 'RTL'
+        mode_request.custom_mode = "RTL"
         self.set_mode_client.call_async(mode_request)
 
 
@@ -109,5 +114,5 @@ def main():
     rclpy.shutdown()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

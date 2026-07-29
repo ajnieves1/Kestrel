@@ -20,7 +20,8 @@ def test_survey_path_radius():
     waypoints = build_survey_path(center_north, center_east, 22.0, orbit_radius, 5.0)
     for waypoint in waypoints:
         radius = math.sqrt(
-            (waypoint.north - center_north) ** 2 + (waypoint.east - center_east) ** 2)
+            (waypoint.north - center_north) ** 2 + (waypoint.east - center_east) ** 2
+        )
         assert abs(radius - orbit_radius) < TOLERANCE
 
 
@@ -41,9 +42,10 @@ def test_survey_path_start_altitude():
 
     small_climb_step = 1.0
     small_climb_waypoints = build_survey_path(15.0, 0.0, 22.0, 8.0, small_climb_step)
-    assert abs(
-        small_climb_waypoints[0].altitude
-        - max(MINIMUM_ALTITUDE, small_climb_step)) < TOLERANCE
+    assert (
+        abs(small_climb_waypoints[0].altitude - max(MINIMUM_ALTITUDE, small_climb_step))
+        < TOLERANCE
+    )
 
 
 # The survey path never generates a waypoint above the structure height
@@ -59,7 +61,8 @@ def test_survey_path_yaw_faces_center():
     waypoints = build_survey_path(center_north, center_east, 22.0, 8.0, 5.0)
     for waypoint in waypoints:
         expected_yaw = bearing_degrees(
-            waypoint.north, waypoint.east, center_north, center_east)
+            waypoint.north, waypoint.east, center_north, center_east
+        )
         assert abs(waypoint.yaw_deg - expected_yaw) < TOLERANCE
 
 
@@ -73,11 +76,13 @@ def test_orbit_path_shape():
     assert len(waypoints) == waypoint_count
     for waypoint in waypoints:
         radius = math.sqrt(
-            (waypoint.north - center.north) ** 2 + (waypoint.east - center.east) ** 2)
+            (waypoint.north - center.north) ** 2 + (waypoint.east - center.east) ** 2
+        )
         assert abs(radius - orbit_radius) < TOLERANCE
         assert abs(waypoint.altitude - center.altitude) < TOLERANCE
         expected_yaw = bearing_degrees(
-            waypoint.north, waypoint.east, center.north, center.east)
+            waypoint.north, waypoint.east, center.north, center.east
+        )
         assert abs(waypoint.yaw_deg - expected_yaw) < TOLERANCE
 
 
