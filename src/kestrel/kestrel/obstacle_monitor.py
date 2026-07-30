@@ -36,22 +36,20 @@ def nearest_obstacle(points, pose_east, pose_north, pose_altitude, yaw_rad):
 def yaw_from_quaternion(orientation):
     return math.atan2(
         2.0 * (orientation.w * orientation.z + orientation.x * orientation.y),
-        1.0 - 2.0 * (orientation.y**2 + orientation.z**2),
-    )
+        1.0 - 2.0 * (orientation.y ** 2 + orientation.z ** 2))
 
 
 # Watch the lidar point cloud and warn the operator on a close obstacle
 class ObstacleMonitor(Node):
     # Subscribe to the cloud, pose, and state, set up the hazard publisher
     def __init__(self):
-        super().__init__("obstacle_monitor")
+        super().__init__('obstacle_monitor')
 
-        self.declare_parameter("hazard_distance_m", 4.0)
-        self.declare_parameter("consecutive_alerts_required", 3)
-        self.hazard_distance_m = self.get_parameter("hazard_distance_m").value
+        self.declare_parameter('hazard_distance_m', 4.0)
+        self.declare_parameter('consecutive_alerts_required', 3)
+        self.hazard_distance_m = self.get_parameter('hazard_distance_m').value
         self.consecutive_alerts_required = self.get_parameter(
-            "consecutive_alerts_required"
-        ).value
+            'consecutive_alerts_required').value
 
         self.pose_message = None
         self.state_message = None
@@ -59,21 +57,15 @@ class ObstacleMonitor(Node):
         self.in_hazard = False
 
         self.create_subscription(
-            PointCloud2, "/lidar/points", self.on_cloud, qos_profile_sensor_data
-        )
+            PointCloud2, '/lidar/points', self.on_cloud, qos_profile_sensor_data)
         self.create_subscription(
-            PoseStamped,
-            "/mavros/local_position/pose",
-            self.on_pose,
-            qos_profile_sensor_data,
-        )
+            PoseStamped, '/mavros/local_position/pose', self.on_pose,
+            qos_profile_sensor_data)
         self.create_subscription(
-            State, "/mavros/state", self.on_state, qos_profile_sensor_data
-        )
+            State, '/mavros/state', self.on_state, qos_profile_sensor_data)
 
         self.hazard_publisher = self.create_publisher(
-            ObstacleHazard, "/kestrel/obstacle_hazards", 10
-        )
+            ObstacleHazard, '/kestrel/obstacle_hazards', 10)
 
     # Store the latest local position message
     def on_pose(self, pose_message):
@@ -91,20 +83,16 @@ class ObstacleMonitor(Node):
             return
 
         points = np.array(
-            [
-                [x, y, z]
-                for x, y, z in point_cloud2.read_points(
-                    cloud_message, field_names=["x", "y", "z"], skip_nans=True
-                )
-            ],
-            dtype=np.float32,
-        )
+            [[x, y, z] for x, y, z in point_cloud2.read_points(
+                cloud_message, field_names=['x', 'y', 'z'], skip_nans=True)],
+            dtype=np.float32)
         if len(points) == 0:
             return
 
         position = self.pose_message.pose.position
         yaw = yaw_from_quaternion(self.pose_message.pose.orientation)
-        nearest = nearest_obstacle(points, position.x, position.y, position.z, yaw)
+        nearest = nearest_obstacle(
+            points, position.x, position.y, position.z, yaw)
         if nearest is None:
             return
         distance, bearing_deg, north, east, altitude = nearest
@@ -130,13 +118,11 @@ class ObstacleMonitor(Node):
         hazard.world_position.y = float(east)
         hazard.world_position.z = float(altitude)
         hazard.message = (
-            f"obstacle {distance:.1f} m at bearing {bearing_deg:.0f} deg, "
-            "closer than the standoff limit, recommend backing off"
-        )
+            f'obstacle {distance:.1f} m at bearing {bearing_deg:.0f} deg, '
+            'closer than the standoff limit, recommend backing off')
         self.hazard_publisher.publish(hazard)
         self.get_logger().warn(
-            f"obstacle hazard: {distance:.1f} m at bearing {bearing_deg:.0f} deg"
-        )
+            f'obstacle hazard: {distance:.1f} m at bearing {bearing_deg:.0f} deg')
 
 
 # Start the node and spin
@@ -148,5 +134,5 @@ def main():
     rclpy.shutdown()
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

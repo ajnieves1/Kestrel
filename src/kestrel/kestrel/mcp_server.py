@@ -19,7 +19,7 @@ from sensor_msgs.msg import BatteryState
 from std_msgs.msg import String
 from std_srvs.srv import Trigger
 
-mcp = FastMCP("kestrel")
+mcp = FastMCP('kestrel')
 bridge_node = None
 
 
@@ -27,7 +27,7 @@ bridge_node = None
 class McpBridge(Node):
     # Create service clients and telemetry subscriptions
     def __init__(self):
-        super().__init__("mcp_bridge")
+        super().__init__('mcp_bridge')
 
         self.callback_group = ReentrantCallbackGroup()
 
@@ -37,46 +37,26 @@ class McpBridge(Node):
         self.mission_state_message = None
 
         self.create_subscription(
-            State,
-            "/mavros/state",
-            self.on_state,
-            qos_profile_sensor_data,
-            callback_group=self.callback_group,
-        )
+            State, '/mavros/state', self.on_state,
+            qos_profile_sensor_data, callback_group=self.callback_group)
         self.create_subscription(
-            PoseStamped,
-            "/mavros/local_position/pose",
-            self.on_pose,
-            qos_profile_sensor_data,
-            callback_group=self.callback_group,
-        )
+            PoseStamped, '/mavros/local_position/pose', self.on_pose,
+            qos_profile_sensor_data, callback_group=self.callback_group)
         self.create_subscription(
-            BatteryState,
-            "/mavros/battery",
-            self.on_battery,
-            qos_profile_sensor_data,
-            callback_group=self.callback_group,
-        )
+            BatteryState, '/mavros/battery', self.on_battery,
+            qos_profile_sensor_data, callback_group=self.callback_group)
         self.create_subscription(
-            String,
-            "/kestrel/mission_state",
-            self.on_mission_state,
-            10,
-            callback_group=self.callback_group,
-        )
+            String, '/kestrel/mission_state', self.on_mission_state,
+            10, callback_group=self.callback_group)
 
         self.takeoff_client = self.create_client(
-            Takeoff, "/kestrel/cmd/takeoff", callback_group=self.callback_group
-        )
+            Takeoff, '/kestrel/cmd/takeoff', callback_group=self.callback_group)
         self.goto_client = self.create_client(
-            GotoLocal, "/kestrel/cmd/goto", callback_group=self.callback_group
-        )
+            GotoLocal, '/kestrel/cmd/goto', callback_group=self.callback_group)
         self.land_client = self.create_client(
-            Trigger, "/kestrel/cmd/land", callback_group=self.callback_group
-        )
+            Trigger, '/kestrel/cmd/land', callback_group=self.callback_group)
         self.abort_client = self.create_client(
-            Trigger, "/kestrel/abort", callback_group=self.callback_group
-        )
+            Trigger, '/kestrel/abort', callback_group=self.callback_group)
 
     # Store the latest vehicle state message
     def on_state(self, state_message):
@@ -99,7 +79,7 @@ class McpBridge(Node):
         service_wait_deadline = time.time() + 10.0
         while not client.wait_for_service(timeout_sec=1.0):
             if time.time() > service_wait_deadline:
-                return "service unavailable, is the flight stack running"
+                return 'service unavailable, is the flight stack running'
 
         future = client.call_async(request)
 
@@ -109,7 +89,7 @@ class McpBridge(Node):
                 return future.result()
             time.sleep(0.05)
 
-        return "the request timed out waiting for a reply"
+        return 'the request timed out waiting for a reply'
 
 
 # Arm the copter and climb to the given altitude
@@ -117,20 +97,18 @@ class McpBridge(Node):
 def takeoff(altitude: float) -> str:
     """Arm the copter and climb to the given altitude in meters."""
     if bridge_node is None:
-        return "bridge not started, launch the flight stack first"
+        return 'bridge not started, launch the flight stack first'
     if not (1.0 <= altitude <= 30.0):
-        return "altitude must be between 1 and 30 meters"
+        return 'altitude must be between 1 and 30 meters'
 
     request = Takeoff.Request()
     request.altitude = altitude
-    result = bridge_node.call_service_blocking(
-        bridge_node.takeoff_client, request, 180.0
-    )
+    result = bridge_node.call_service_blocking(bridge_node.takeoff_client, request, 180.0)
     if isinstance(result, str):
         return result
     if result.success:
-        return f"takeoff succeeded: {result.message}"
-    return f"takeoff failed: {result.message}"
+        return f'takeoff succeeded: {result.message}'
+    return f'takeoff failed: {result.message}'
 
 
 # Fly to a local position in meters north and east of home
@@ -138,11 +116,11 @@ def takeoff(altitude: float) -> str:
 def goto(north: float, east: float, altitude: float, yaw_deg: float = 0.0) -> str:
     """Fly to a local position in meters north and east of home at the given altitude, yaw_deg is compass heading."""
     if bridge_node is None:
-        return "bridge not started, launch the flight stack first"
-    if math.sqrt(north**2 + east**2) > 95.0:
-        return "target is outside the 95 meter operating area"
+        return 'bridge not started, launch the flight stack first'
+    if math.sqrt(north ** 2 + east ** 2) > 95.0:
+        return 'target is outside the 95 meter operating area'
     if not (1.0 <= altitude <= 30.0):
-        return "altitude must be between 1 and 30 meters"
+        return 'altitude must be between 1 and 30 meters'
 
     request = GotoLocal.Request()
     request.north = north
@@ -153,8 +131,8 @@ def goto(north: float, east: float, altitude: float, yaw_deg: float = 0.0) -> st
     if isinstance(result, str):
         return result
     if result.success:
-        return f"arrived: {result.message}"
-    return f"goto failed: {result.message}"
+        return f'arrived: {result.message}'
+    return f'goto failed: {result.message}'
 
 
 # Land the copter where it is and wait for disarm
@@ -162,16 +140,14 @@ def goto(north: float, east: float, altitude: float, yaw_deg: float = 0.0) -> st
 def land() -> str:
     """Land the copter at its current position and wait for disarm."""
     if bridge_node is None:
-        return "bridge not started, launch the flight stack first"
+        return 'bridge not started, launch the flight stack first'
 
-    result = bridge_node.call_service_blocking(
-        bridge_node.land_client, Trigger.Request(), 70.0
-    )
+    result = bridge_node.call_service_blocking(bridge_node.land_client, Trigger.Request(), 70.0)
     if isinstance(result, str):
         return result
     if result.success:
-        return f"landed: {result.message}"
-    return f"land failed: {result.message}"
+        return f'landed: {result.message}'
+    return f'land failed: {result.message}'
 
 
 # Force the safety guard into RTL, this latches
@@ -179,16 +155,14 @@ def land() -> str:
 def abort() -> str:
     """Emergency stop, force return to launch, this latches and cannot be undone in flight."""
     if bridge_node is None:
-        return "bridge not started, launch the flight stack first"
+        return 'bridge not started, launch the flight stack first'
 
-    result = bridge_node.call_service_blocking(
-        bridge_node.abort_client, Trigger.Request(), 15.0
-    )
+    result = bridge_node.call_service_blocking(bridge_node.abort_client, Trigger.Request(), 15.0)
     if isinstance(result, str):
         return result
     if result.success:
-        return f"abort triggered: {result.message}"
-    return f"abort failed: {result.message}"
+        return f'abort triggered: {result.message}'
+    return f'abort failed: {result.message}'
 
 
 # Read the stored mode, armed, battery, and position without a service call
@@ -196,28 +170,24 @@ def abort() -> str:
 def get_telemetry() -> str:
     """Current mode, armed state, battery percent, and position in meters north, east, and altitude."""
     if bridge_node is None:
-        return "bridge not started, launch the flight stack first"
+        return 'bridge not started, launch the flight stack first'
 
     state = bridge_node.state_message
-    mode = state.mode if state is not None else "unknown"
-    armed = state.armed if state is not None else "unknown"
+    mode = state.mode if state is not None else 'unknown'
+    armed = state.armed if state is not None else 'unknown'
 
     battery = bridge_node.battery_message
-    battery_percent = (
-        f"{round(battery.percentage * 100)}%" if battery is not None else "unknown"
-    )
+    battery_percent = f'{round(battery.percentage * 100)}%' if battery is not None else 'unknown'
 
     # Read side mirror of build_enu_setpoint, the commander stays the single
     # authority for the command side conversion
     pose = bridge_node.pose_message
-    north = round(pose.pose.position.y, 2) if pose is not None else "unknown"
-    east = round(pose.pose.position.x, 2) if pose is not None else "unknown"
-    altitude = round(pose.pose.position.z, 2) if pose is not None else "unknown"
+    north = round(pose.pose.position.y, 2) if pose is not None else 'unknown'
+    east = round(pose.pose.position.x, 2) if pose is not None else 'unknown'
+    altitude = round(pose.pose.position.z, 2) if pose is not None else 'unknown'
 
-    return (
-        f"mode={mode} armed={armed} battery={battery_percent} "
-        f"north={north} east={east} altitude={altitude}"
-    )
+    return (f'mode={mode} armed={armed} battery={battery_percent} '
+            f'north={north} east={east} altitude={altitude}')
 
 
 # Read the stored mission director state without a service call
@@ -225,33 +195,31 @@ def get_telemetry() -> str:
 def get_mission_state() -> str:
     """Current mission director state, IDLE through LANDED, unknown when no mission is running."""
     if bridge_node is None:
-        return "bridge not started, launch the flight stack first"
+        return 'bridge not started, launch the flight stack first'
     if bridge_node.mission_state_message is None:
-        return "unknown"
+        return 'unknown'
     return bridge_node.mission_state_message.data
 
 
 # List the finished report directories
-@mcp.resource("kestrel://reports")
+@mcp.resource('kestrel://reports')
 def list_reports() -> str:
     """Newline list of finished report directories under reports/."""
-    if not os.path.isdir("reports"):
-        return ""
+    if not os.path.isdir('reports'):
+        return ''
     directories = sorted(
-        name
-        for name in os.listdir("reports")
-        if os.path.isdir(os.path.join("reports", name)) and name != "current"
-    )
-    return "\n".join(directories)
+        name for name in os.listdir('reports')
+        if os.path.isdir(os.path.join('reports', name)) and name != 'current')
+    return '\n'.join(directories)
 
 
 # Return the markdown content of one finished report
-@mcp.resource("kestrel://reports/{timestamp}")
+@mcp.resource('kestrel://reports/{timestamp}')
 def get_report(timestamp: str) -> str:
     """Content of one finished report, or a not found message."""
-    report_path = os.path.join("reports", timestamp, "report.md")
+    report_path = os.path.join('reports', timestamp, 'report.md')
     if not os.path.isfile(report_path):
-        return "no such report"
+        return 'no such report'
     with open(report_path) as report_file:
         return report_file.read()
 
@@ -273,5 +241,5 @@ def main():
     rclpy.shutdown()
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
