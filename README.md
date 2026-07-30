@@ -119,6 +119,25 @@ meters. Ask the client to land the copter. The available tools are
 `get_mission_state`. The system makes finished mission reports available
 as MCP resources. Find them at `kestrel://reports`.
 
+## Record the tlemetry
+
+Shell 1, launch a full mission:
+```bash
+docker compose -f docker/compose.yaml run --rm --name kestrel_rec dev bash
+ros2 launch kestrel mission.launch.py headless:=true
+```
+Leave it running. SITL boots and the EKF settles for ~30 to 40s before it arms.
+
+Shell 2, exec into the same container and start the recorder:
+```bash
+docker exec -it kestrel_rec bash
+source /opt/ros/jazzy/setup.bash && source /ws/install/setup.bash
+cd /ws/src/kestrel
+python3 scripts/record_telemetry.py --ros-args -p label:=nominal
+```
+
+Logs are saved in ./telemetry_logs
+
 ## Sample report
 
 If you do not set an LLM API key, a full mission run writes a report with
